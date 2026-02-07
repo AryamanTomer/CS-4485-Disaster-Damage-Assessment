@@ -1,0 +1,14 @@
+# Data
+data/*
+!data/README.md
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
