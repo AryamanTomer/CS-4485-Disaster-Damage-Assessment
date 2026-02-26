@@ -1,5 +1,6 @@
 import math
 
+
 # Defines "processed features": features from the JSON files processed for maximum utility in program
 class ProcessedFeature:
     # ProcessedFeature constructor
