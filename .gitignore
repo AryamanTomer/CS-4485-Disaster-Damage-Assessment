@@ -16,3 +16,9 @@ node_modules/
 #.env
 .env.local
 .env.development.local
+.idea/CS-4485-Disaster-Damage-Assessment.iml
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/inspectionProfiles/Project_Default.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
