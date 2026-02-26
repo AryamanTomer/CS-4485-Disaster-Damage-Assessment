@@ -1,7 +1,7 @@
 from PIL import Image
 import json
 from pathlib import Path
-from process_features import ProcessedFeature, process_feature
+from process_features import process_feature
 
 # Project root
 root = Path(__file__).parent.parent
@@ -33,3 +33,24 @@ features_post_disaster = label_post_disaster["features"]["xy"]  # Post-disaster
 # ("Processed features" are features from the JSON files processed so they are convenient to work with)
 processed_features_pre_disaster = [process_feature(feature) for feature in features_pre_disaster]       # Pre-disaster
 processed_features_post_disaster = [process_feature(feature) for feature in features_post_disaster]     # Post-disaster
+
+# Directory for cropped feature images
+feature_images_dir = root / "bin/"
+
+# Crop features from pre-disaster image and save them as new images
+for feature in processed_features_pre_disaster:
+    # Crop feature image
+    feature_image = img_pre_disaster.crop((feature.vertex_1[0], feature.vertex_1[1],
+                                           feature.vertex_2[0], feature.vertex_2[1]))
+
+    # Save feature image as [UID]_[feature type]_pre_disaster.png
+    feature_image.save(feature_images_dir / f"{feature.uid}_{feature.feature_type}_pre_disaster.png")
+
+# Crop features from post-disaster image and save them as new images
+for feature in processed_features_post_disaster:
+    # Crop feature image
+    feature_image = img_post_disaster.crop((feature.vertex_1[0], feature.vertex_1[1],
+                                           feature.vertex_2[0], feature.vertex_2[1]))
+
+    # Save feature image as [UID]_[feature type]_post_disaster.png
+    feature_image.save(feature_images_dir / f"{feature.uid}_{feature.feature_type}_post_disaster.png")
