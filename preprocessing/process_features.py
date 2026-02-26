@@ -13,6 +13,27 @@ class ProcessedFeature:
         # Shapes of processed features are defined by opposing vertices: vertex 1 and vertex 2
 
 
+# Converts POLYGON string from JSON into list of vertices
+def polygon_string_to_list(polygon):
+    # Remove prefix and suffix so polygon string is only comma-separated list of ordered pairs
+    polygon = polygon.removeprefix("POLYGON ((").removesuffix("))")
+
+    # Tokenize polygon: each token is a string representing a ordered pair
+    vertex_strings = polygon.split(", ")
+
+    # Convert ordered pair strings to actual ordered pair tuples
+    vertices = []
+    for string in vertex_strings:
+        # Tokenize ordered pair string into x and y strings
+        vertex_string_list = string.split("")
+
+        # Convert x and y strings to floats and add ordered pair to vertices list
+        vertices.append((float(vertex_string_list[0]), float(vertex_string_list[1])))
+
+    # Return list of vertices
+    return vertices
+
+
 # Simplifies polygon into smallest axis-aligned bounding box
 # Polygon: list of n ordered pairs
 # Bounding box: two ordered pairs at opposing corners of box
