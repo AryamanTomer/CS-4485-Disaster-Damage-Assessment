@@ -1,3 +1,5 @@
+import math
+
 # Defines "processed features": features from the JSON files processed for maximum utility in program
 class ProcessedFeature:
     # ProcessedFeature constructor
@@ -25,7 +27,7 @@ def polygon_string_to_list(polygon):
     vertices = []
     for string in vertex_strings:
         # Tokenize ordered pair string into x and y strings
-        vertex_string_list = string.split("")
+        vertex_string_list = string.split(" ")
 
         # Convert x and y strings to floats and add ordered pair to vertices list
         vertices.append((float(vertex_string_list[0]), float(vertex_string_list[1])))
@@ -38,11 +40,9 @@ def polygon_string_to_list(polygon):
 # Polygon: list of n ordered pairs
 # Bounding box: two ordered pairs at opposing corners of box
 def simplify_feature_shape(vertices):
-    # Will store vertices of bounding box
-    min_x = 0   # Min x
-    min_y = 0   # Min y
-    max_x = 0   # Max x
-    max_y = 0   # Max y
+    # Will store vertices of bounding box; initialized to x and y of first vertex
+    min_x = max_x = vertices[0][0]  # Min x and max x
+    min_y = max_y = vertices[0][1]  # Min y and max y
 
     # Go through each vertex of polygon to determine bounding box vertices
     for vertex in vertices:
@@ -52,14 +52,14 @@ def simplify_feature_shape(vertices):
         max_x = vertex[0] if vertex[0] > max_x else max_x   # Max x
         max_y = vertex[1] if vertex[1] > max_y else max_y   # Max y
 
-    # Return vertices of bounding box as a pair of tuples
-    return (min_x, min_y), (max_x, max_y)
+    # Return vertices of bounding box as a pair of tuples; min values rounded down and max values rounded up
+    return (math.floor(min_x), math.floor(min_y)), (math.ceil(max_x), math.ceil(max_y))
 
 
 # Process a feature so it is easier to work with
 def process_feature(feature):
     # Get vertices of bounding box from polygon vertices
-    vertex_1, vertex_2 = polygon_string_to_list(feature["wkt"])
+    vertex_1, vertex_2 = simplify_feature_shape(polygon_string_to_list(feature["wkt"]))
 
     # Return processed feature
     return ProcessedFeature(feature["properties"]["uid"], feature["properties"]["feature_type"], vertex_1, vertex_2)
