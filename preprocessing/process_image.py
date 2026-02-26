@@ -6,7 +6,7 @@ from pathlib import Path
 root = Path(__file__).parent.parent
 
 # Image pair name (root of image and label filenames)
-image_pair = "socal-fire_00000000_"
+image_pair = "socal-fire_00000031_"
 
 # Directories for:
 images = root / "test_images_labels_targets/test/images/"   # Images
