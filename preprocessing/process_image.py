@@ -24,10 +24,6 @@ label_post_disaster_file = open(labels / (image_pair + "post_disaster.json"), 'r
 label_pre_disaster = json.load(label_pre_disaster_file)     # Pre-disaster
 label_post_disaster = json.load(label_post_disaster_file)   # Post-disaster
 
-# Display images (test)
-img_pre_disaster.show()
-img_post_disaster.show()
-
-# Print JSONS (test)
-print(json.dumps(label_pre_disaster, indent=4))
-print(json.dumps(label_post_disaster, indent=4))
+# Store lists of features from JSONS:
+features_pre_disaster = label_pre_disaster["features"]["xy"]    # Pre-disaster
+features_post_disaster = label_post_disaster["features"]["xy"]  # Post-disaster
