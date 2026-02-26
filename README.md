@@ -19,5 +19,7 @@ We use the xView2 Challenge dataset for building damage assessment.
 - Leaflet / Mapbox (geospatial visualization)
 - React (frontend dashboard)
 
+## How to Run
+
 ## Team
 CS 4485 Project Team – UTD
