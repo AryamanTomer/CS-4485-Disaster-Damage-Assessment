@@ -1,6 +1,7 @@
 from PIL import Image
 import json
 from pathlib import Path
+from process_features import ProcessedFeature, process_feature
 
 # Project root
 root = Path(__file__).parent.parent
@@ -27,3 +28,8 @@ label_post_disaster = json.load(label_post_disaster_file)   # Post-disaster
 # Store lists of features from JSONS:
 features_pre_disaster = label_pre_disaster["features"]["xy"]    # Pre-disaster
 features_post_disaster = label_post_disaster["features"]["xy"]  # Post-disaster
+
+# Store lists of processed features:
+# ("Processed features" are features from the JSON files processed so they are convenient to work with)
+processed_features_pre_disaster = [process_feature(feature) for feature in features_pre_disaster]       # Pre-disaster
+processed_features_post_disaster = [process_feature(feature) for feature in features_post_disaster]     # Post-disaster
