@@ -54,3 +54,12 @@ def simplify_feature_shape(vertices):
 
     # Return vertices of bounding box as a pair of tuples
     return (min_x, min_y), (max_x, max_y)
+
+
+# Process a feature so it is easier to work with
+def process_feature(feature):
+    # Get vertices of bounding box from polygon vertices
+    vertex_1, vertex_2 = polygon_string_to_list(feature["wkt"])
+
+    # Return processed feature
+    return ProcessedFeature(feature["properties"]["uid"], feature["properties"]["feature_type"], vertex_1, vertex_2)
