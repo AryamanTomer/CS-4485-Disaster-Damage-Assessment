@@ -13,6 +13,9 @@ class ProcessedFeature:
         # Shapes of processed features are defined by opposing vertices: vertex 1 and vertex 2
 
 
+# Simplifies polygon into smallest axis-aligned bounding box
+# Polygon: list of n ordered pairs
+# Bounding box: two ordered pairs at opposing corners of box
 def simplify_feature_shape(vertices):
     # Will store vertices of bounding box
     min_x = 0   # Min x
