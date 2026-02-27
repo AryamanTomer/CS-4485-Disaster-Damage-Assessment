@@ -7,19 +7,19 @@ from process_features import process_feature
 root = Path(__file__).parent.parent
 
 # Image pair name (root of image and label filenames)
-image_pair = "socal-fire_00000031_"
+image_pair = "socal-fire_00000031"
 
 # Directories for:
 images = root / "test_images_labels_targets/test/images/"   # Images
 labels = root / "test_images_labels_targets/test/labels/"   # Labels
 
 # Open image files:
-img_pre_disaster = Image.open(images / (image_pair + "pre_disaster.png"))       # Pre-disaster
-img_post_disaster = Image.open(images / (image_pair + "post_disaster.png"))     # Post-disaster
+img_pre_disaster = Image.open(images / (image_pair + "_pre_disaster.png"))      # Pre-disaster
+img_post_disaster = Image.open(images / (image_pair + "_post_disaster.png"))    # Post-disaster
 
 # Open label files:
-label_pre_disaster_file = open(labels / (image_pair + "pre_disaster.json"), 'r')    # Pre-disaster
-label_post_disaster_file = open(labels / (image_pair + "post_disaster.json"), 'r')  # Post-disaster
+label_pre_disaster_file = open(labels / (image_pair + "_pre_disaster.json"), 'r')       # Pre-disaster
+label_post_disaster_file = open(labels / (image_pair + "_post_disaster.json"), 'r')     # Post-disaster
 
 # Load label JSONs:
 label_pre_disaster = json.load(label_pre_disaster_file)     # Pre-disaster
@@ -44,7 +44,7 @@ for feature in processed_features_pre_disaster:
                                            feature.vertex_2[0], feature.vertex_2[1]))
 
     # Save feature image as [UID]_[feature type]_pre_disaster.png
-    feature_image.save(feature_images_dir / f"{feature.uid}_{feature.feature_type}_pre_disaster.png")
+    feature_image.save(feature_images_dir / f"{image_pair}_{feature.uid}_{feature.feature_type}_pre_disaster.png")
 
 # Crop features from post-disaster image and save them as new images
 for feature in processed_features_post_disaster:
@@ -53,4 +53,4 @@ for feature in processed_features_post_disaster:
                                            feature.vertex_2[0], feature.vertex_2[1]))
 
     # Save feature image as [UID]_[feature type]_post_disaster.png
-    feature_image.save(feature_images_dir / f"{feature.uid}_{feature.feature_type}_post_disaster.png")
+    feature_image.save(feature_images_dir / f"{image_pair}_{feature.uid}_{feature.feature_type}_post_disaster.png")
