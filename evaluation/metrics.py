@@ -2,8 +2,13 @@ import pandas as pd
 from sklearn.metrics import classification_report, confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
+from pathlib import Path
+import os
 
-df = pd.read_csv("evaluation/results.csv")
+ROOT = Path(__file__).resolve().parents[1]
+SHOW_PLOT = os.getenv("SHOW_PLOT", "0") == "1"
+
+df = pd.read_csv(ROOT / "evaluation" / "results.csv")
 
 # Remove unclassified
 df = df[df["ground_truth"] != "un-classified"]
@@ -26,6 +31,7 @@ plt.xlabel("VLM Prediction")
 plt.ylabel("Ground Truth")
 plt.title("Damage Assessment Confusion Matrix")
 plt.tight_layout()
-plt.savefig("evaluation/confusion_matrix.png")
-plt.show()
+plt.savefig(ROOT / "evaluation" / "confusion_matrix.png")
+if SHOW_PLOT:
+    plt.show()
 print("Confusion matrix saved!")
