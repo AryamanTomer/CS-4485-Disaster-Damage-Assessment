@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: evaluation/metrics.py",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/evaluation/metrics.py",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "env": {
+        "SHOW_PLOT": "0"
+      }
+    }
+  ]
+}
