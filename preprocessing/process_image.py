@@ -40,8 +40,8 @@ feature_images_dir = root / "bin/"
 # Crop features from pre-disaster image and save them as new images
 for feature in processed_features_pre_disaster:
     # Crop feature image
-    feature_image = img_pre_disaster.crop((feature.vertex_1[0], feature.vertex_1[1],
-                                           feature.vertex_2[0], feature.vertex_2[1]))
+    feature_image = img_pre_disaster.crop((feature.min_x(), feature.min_y(),
+                                           feature.max_x(), feature.max_y()))
 
     # Save feature image as [UID]_[feature type]_pre_disaster.png
     feature_image.save(feature_images_dir / f"{image_pair}_{feature.uid}_{feature.feature_type}_pre_disaster.png")
@@ -49,8 +49,8 @@ for feature in processed_features_pre_disaster:
 # Crop features from post-disaster image and save them as new images
 for feature in processed_features_post_disaster:
     # Crop feature image
-    feature_image = img_post_disaster.crop((feature.vertex_1[0], feature.vertex_1[1],
-                                           feature.vertex_2[0], feature.vertex_2[1]))
+    feature_image = img_post_disaster.crop((feature.min_x(), feature.min_y(),
+                                           feature.max_x(), feature.max_y()))
 
     # Save feature image as [UID]_[feature type]_post_disaster.png
     feature_image.save(feature_images_dir / f"{image_pair}_{feature.uid}_{feature.feature_type}_post_disaster.png")

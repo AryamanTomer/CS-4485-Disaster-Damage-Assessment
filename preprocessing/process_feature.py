@@ -26,17 +26,21 @@ DAMAGE_CLASS_MAP = {
 # Defines "processed features": features from the JSON files processed for maximum utility in program
 class ProcessedFeature:
     # ProcessedFeature constructor
-    def __init__(self, uid, feature_type, vertex_1, vertex_2, damage_class):
+    def __init__(self, uid, feature_type, bounding_box, damage_class):
         # Attributes:
         self.uid = uid                      # UID
         self.feature_type = feature_type    # Type
-        self.vertex_1 = vertex_1            # Vertex 1
-        self.vertex_2 = vertex_2            # Vertex 2
+        self.bounding_box = bounding_box    # Bounding box (min x, min y, max x, max y)
         self.damage_class = damage_class    # Damage class
 
         # Unprocessed features have polygonal shapes with n vertices
-        # To aid in generating images of features, processed features are rectangular
-        # Shapes of processed features are defined by opposing vertices: vertex 1 and vertex 2
+        # To aid in generating images of features, processed features have rectangular bounding boxes
+
+    # Getter methods for bounding box values:
+    def min_x(self): return self.bounding_box[0]    # Min x
+    def min_y(self): return self.bounding_box[1]    # Min y
+    def max_x(self): return self.bounding_box[2]    # Max x
+    def max_y(self): return self.bounding_box[3]    # Max y
 
 
 # Simplifies feature polygon into smallest axis-aligned bounding box
@@ -59,8 +63,8 @@ def polygon_to_bbox(polygon):
         max_x = max(max_x, x)   # Max x
         max_y = max(max_y, y)   # Max y
 
-    # Returns vertices of bounding box
-    return (math.floor(min_x), math.floor(min_y)), (math.ceil(max_x), math.ceil(max_y))
+    # Returns bounding box: (min x, min y, max x, max y)
+    return math.floor(min_x), math.floor(min_y), math.ceil(max_x), math.ceil(max_y)
 
 
 # Gets damage class from JSON feature
@@ -70,6 +74,7 @@ def get_damage_class(feature):
 
     try:
         # If damage subtype string is valid, returns corresponding damage class enum
+        # Undefined damage subtype string interpreted as pre-disaster
         return DAMAGE_CLASS_MAP[subtype]
     except KeyError:
         # If damage subtype string is invalid, raises value error
@@ -78,8 +83,8 @@ def get_damage_class(feature):
 
 # Process a feature so it is easier to work with
 def process_feature(feature):
-    # Get vertices of bounding box from polygon vertices of feature
-    vertex_1, vertex_2 = polygon_to_bbox(feature["wkt"])
+    # Get bounding box from polygon vertices of feature
+    bounding_box = polygon_to_bbox(feature["wkt"])
 
     # Get damage class
     damage_class = get_damage_class(feature)
@@ -87,5 +92,5 @@ def process_feature(feature):
     # Return processed feature
     return ProcessedFeature(feature["properties"]["uid"],           # UID
                             feature["properties"]["feature_type"],  # Feature type
-                            vertex_1, vertex_2,                     # Bounds
+                            bounding_box,                           # Bounding box
                             damage_class)                           # Damage class
