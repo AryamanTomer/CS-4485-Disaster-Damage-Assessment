@@ -1,7 +1,7 @@
 from PIL import Image
 import json
 from pathlib import Path
-from process_features import process_feature
+from process_feature import process_feature
 
 # Project root
 root = Path(__file__).parent.parent
