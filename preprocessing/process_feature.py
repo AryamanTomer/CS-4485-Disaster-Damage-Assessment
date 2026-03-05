@@ -37,10 +37,13 @@ def polygon_string_to_list(polygon):
     return vertices
 
 
-# Simplifies polygon into smallest axis-aligned bounding box
+# Simplifies feature polygon into smallest axis-aligned bounding box
 # Polygon: list of n ordered pairs
 # Bounding box: two ordered pairs at opposing corners of box
-def simplify_feature_shape(vertices):
+def simplify_feature_shape(feature):
+    # Gets vertices from provided feature
+    vertices = polygon_string_to_list(feature["wkt"])
+
     # Will store vertices of bounding box; initialized to x and y of first vertex
     min_x = max_x = vertices[0][0]  # Min x and max x
     min_y = max_y = vertices[0][1]  # Min y and max y
@@ -59,8 +62,8 @@ def simplify_feature_shape(vertices):
 
 # Process a feature so it is easier to work with
 def process_feature(feature):
-    # Get vertices of bounding box from polygon vertices
-    vertex_1, vertex_2 = simplify_feature_shape(polygon_string_to_list(feature["wkt"]))
+    # Get vertices of bounding box from polygon vertices of feature
+    vertex_1, vertex_2 = simplify_feature_shape(feature)
 
     # Return processed feature
     return ProcessedFeature(feature["properties"]["uid"], feature["properties"]["feature_type"], vertex_1, vertex_2)
