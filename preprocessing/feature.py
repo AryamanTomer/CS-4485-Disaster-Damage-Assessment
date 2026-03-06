@@ -10,6 +10,7 @@ class DamageClass(Enum):
     MINOR_DAMAGE = 2    # Minor damage
     MAJOR_DAMAGE = 3    # Major damage
     DESTROYED = 4       # Destroyed
+    UNCLASSIFIED = 5    # Unclassified
 
 
 # Dictionary mapping JSON damage subtype strings to DamageClass enums
@@ -19,13 +20,14 @@ DAMAGE_CLASS_MAP = {
     "no-damage": DamageClass.NO_DAMAGE,         # No damage
     "minor-damage": DamageClass.MINOR_DAMAGE,   # Minor damage
     "major-damage": DamageClass.MAJOR_DAMAGE,   # Major damage
-    "destroyed": DamageClass.DESTROYED          # Destroyed
+    "destroyed": DamageClass.DESTROYED,         # Destroyed
+    "un-classified": DamageClass.UNCLASSIFIED   # Unclassified
 }
 
 
-# Defines "processed features": features from the JSON files processed for maximum utility in program
-class ProcessedFeature:
-    # ProcessedFeature constructor
+# Defines features from the JSON files processed for maximum utility in program
+class Feature:
+    # Feature constructor
     def __init__(self, uid, feature_type, bounding_box, damage_class):
         # Attributes:
         self.uid = uid                      # UID
@@ -81,16 +83,16 @@ def get_damage_class(feature):
         raise ValueError(f"Unknown damage subtype: {subtype}")
 
 
-# Process a feature so it is easier to work with
-def process_feature(feature):
-    # Get bounding box from polygon vertices of feature
-    bounding_box = polygon_to_bbox(feature["wkt"])
+# Process a raw feature so it is easier to work with
+def process_raw_feature(raw_feature):
+    # Get bounding box from polygon vertices of raw feature
+    bounding_box = polygon_to_bbox(raw_feature["wkt"])
 
     # Get damage class
-    damage_class = get_damage_class(feature)
+    damage_class = get_damage_class(raw_feature)
 
-    # Return processed feature
-    return ProcessedFeature(feature["properties"]["uid"],           # UID
-                            feature["properties"]["feature_type"],  # Feature type
-                            bounding_box,                           # Bounding box
-                            damage_class)                           # Damage class
+    # Return feature
+    return Feature(raw_feature["properties"]["uid"],            # UID
+                   raw_feature["properties"]["feature_type"],   # Feature type
+                   bounding_box,                                # Bounding box
+                   damage_class)                                # Damage class
