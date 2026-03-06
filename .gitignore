@@ -6,6 +6,9 @@ data/images/*
 !data/labels
 data/labels/*
 
+# Bin
+bin/*
+
 # Python
 __pycache__/
 *.pyc
