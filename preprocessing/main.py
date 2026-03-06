@@ -35,10 +35,10 @@ def save_feature_images(feature_images, features, save_directory, disaster, imag
 # Main function
 def main():
     # Directories for:
-    root = Path(__file__).parent.parent                             # Project root
-    images_dir = root / "test_images_labels_targets/test/images/"   # Images from dataset
-    labels_dir = root / "test_images_labels_targets/test/labels/"   # Labels from dataset
-    feature_images_dir = root / "bin/"                              # Cropped feature images
+    root = Path(__file__).parent.parent     # Project root
+    images_dir = root / "data/images/"      # Images from dataset
+    labels_dir = root / "data/labels/"      # Labels from dataset
+    feature_images_dir = root / "bin/"      # Cropped feature images
 
     # Disaster
     disaster = "socal-fire"

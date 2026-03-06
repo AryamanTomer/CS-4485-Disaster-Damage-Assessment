@@ -1,6 +1,10 @@
 # Data
 data/*
 !data/README.md
+!data/images/
+data/images/*
+!data/labels
+data/labels/*
 
 # Python
 __pycache__/
