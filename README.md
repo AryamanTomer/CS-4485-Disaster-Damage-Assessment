@@ -19,6 +19,8 @@ We use the xView2 Challenge dataset for building damage assessment.
 - Leaflet / Mapbox (geospatial visualization)
 - React (frontend dashboard)
 
+## How to Run
+
 ## How to run
 
 Use the project’s **Python 3.12** virtual environment (`.venv`) so all dependencies and the same interpreter are used everywhere.
