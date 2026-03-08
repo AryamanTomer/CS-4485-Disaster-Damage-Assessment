@@ -10,11 +10,11 @@ WEIGHTS   = Path("backend/weights/resnet18_damage.pth")
 DEVICE    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 IMG_SIZE  = 224
 
+# 3-channel normalize (applied to each image separately; then pre+post concatenated → 6 ch)
 transform = T.Compose([
     T.Resize((IMG_SIZE, IMG_SIZE)),
     T.ToTensor(),
-    T.Normalize([0.485, 0.456, 0.406, 0.485, 0.456, 0.406],
-                [0.229, 0.224, 0.225, 0.229, 0.224, 0.225]),
+    T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
 ])
 
 def build_model():
