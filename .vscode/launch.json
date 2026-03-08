@@ -2,11 +2,30 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Python: backend/vlm_pipeline.py",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/vlm_pipeline.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": true
+    },
+    {
+      "name": "Python: backend/batch_evaluate.py",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/batch_evaluate.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": true
+    },
+    {
       "name": "Python: evaluation/metrics.py",
       "type": "python",
       "request": "launch",
       "program": "${workspaceFolder}/evaluation/metrics.py",
       "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
       "justMyCode": true,
       "env": {
         "SHOW_PLOT": "0"

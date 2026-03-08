@@ -10,14 +10,27 @@ SHOW_PLOT = os.getenv("SHOW_PLOT", "0") == "1"
 
 df = pd.read_csv(ROOT / "evaluation" / "results.csv")
 
-# Remove unclassified
+# Map unclear to no-damage before any filtering
+df["vlm_prediction"] = df["vlm_prediction"].replace("unclear", "no-damage")
+
+# Remove unclassified ground truth
 df = df[df["ground_truth"] != "un-classified"]
 
-# Clean up VLM predictions (in case of any extra text)
 valid_labels = ["no-damage", "minor-damage", "major-damage", "destroyed"]
+excluded = df[~df["vlm_prediction"].isin(valid_labels)]
+n_unclear = (excluded["vlm_prediction"] == "unclear").sum()
+n_other = len(excluded) - n_unclear
+if len(excluded):
+    print(f"Excluded from metrics: {len(excluded)} ({n_unclear} unclear, {n_other} invalid format)")
+
+# Only rows with valid VLM prediction
 df = df[df["vlm_prediction"].isin(valid_labels)]
 
-print(f"Total samples: {len(df)}")
+if df.empty:
+    print("No rows with valid VLM predictions to evaluate. Run batch_evaluate.py first and ensure the model returns no-damage, minor-damage, major-damage, or destroyed.")
+    exit(0)
+
+print(f"Total samples (evaluated): {len(df)}")
 print(f"Accuracy: {(df['vlm_prediction'] == df['ground_truth']).mean():.1%}")
 print("\nDetailed Report:")
 print(classification_report(df["ground_truth"], df["vlm_prediction"], zero_division=0))
