@@ -14,7 +14,7 @@ const CONDITION_COLORS = {
   minor_damage: '#8ccf3f',
   major_damage: '#f49d37',
   destroyed: '#d64545',
-  unknown: '#5b6a83'
+  unknown: '#00c2ff'
 };
 
 function normalizeCondition(rawCondition) {
@@ -378,6 +378,77 @@ function normalizeBoundaryLatLng(house, transform) {
   return normalized.length >= 3 ? normalized : null;
 }
 
+function buildUndeterminedPolygonsFromLabel(labelData, imageId, transform) {
+  const xyFeatures = labelData?.features?.xy;
+
+  if (!Array.isArray(xyFeatures) || xyFeatures.length === 0) {
+    return [];
+  }
+
+  if (!Array.isArray(transform) || transform.length < 6) {
+    return [];
+  }
+
+  return xyFeatures
+    .map((feature, index) => {
+      const points = parseWktPolygonPoints(feature?.wkt);
+      if (points.length < 3) {
+        return null;
+      }
+
+      const boundary = points
+        .map((point) => pixelToLatLng(point.x, point.y, transform))
+        .filter(Boolean)
+        .map((latLng) => [latLng.lat, latLng.lng]);
+
+      if (boundary.length < 3) {
+        return null;
+      }
+
+      const uid = feature?.properties?.uid || `feature-${index}`;
+
+      return {
+        id: `${imageId}-${uid}`,
+        imageId,
+        boundary,
+        condition: 'unknown'
+      };
+    })
+    .filter(Boolean);
+}
+
+function LabelPolygonOverlays({ polygons, imageType }) {
+  const suffix = imageType === 'pre' ? '_pre_disaster.png' : '_post_disaster.png';
+
+  if (!Array.isArray(polygons) || polygons.length === 0) {
+    return null;
+  }
+
+  return polygons
+    .filter((polygon) => polygon.imageId && String(polygon.imageId).endsWith(suffix))
+    .map((polygon) => {
+      const fillColor = conditionToColor(polygon.condition);
+
+      return (
+        <Polygon
+          key={polygon.id}
+          positions={polygon.boundary}
+          pathOptions={{
+            color: fillColor,
+            weight: 1,
+            fillColor,
+            fillOpacity: 0.2,
+            opacity: 0.8
+          }}
+        >
+          <Tooltip direction="top" offset={[0, -4]}>
+            {'Type: unknown'}
+          </Tooltip>
+        </Polygon>
+      );
+    });
+}
+
 function HouseConditionOverlays({ houses, imageTransformsById, imageType }) {
   const normalizedHouses = useMemo(() => {
     if (!Array.isArray(houses) || houses.length === 0) {
@@ -504,10 +575,45 @@ function MapBoundsController({ bounds }) {
   return null;
 }
 
+// Keep Leaflet layout in sync when side panels change width.
+function MapResizeController({ chatOpen }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const rafId = requestAnimationFrame(() => {
+      map.invalidateSize({ pan: true, debounceMoveend: true });
+    });
+
+    return () => cancelAnimationFrame(rafId);
+  }, [chatOpen, map]);
+
+  return null;
+}
+
+function FadingImageOverlay({ image, animateOnAdd, onError }) {
+  return (
+    <LeafletImageOverlay
+      url={image.url}
+      bounds={image.bounds}
+      opacity={0.85}
+      className={`disaster-image-overlay ${animateOnAdd ? 'disaster-image-overlay--fade-in' : ''}`}
+      interactive={false}
+      eventHandlers={{
+        error: () => {
+          if (onError) {
+            onError(image.id);
+          }
+        }
+      }}
+    />
+  );
+}
+
 // Render only overlays in the viewport and chunk them to keep map interactions smooth.
 function SocalFireOverlays({ imageType, imageTransforms, availableImageSet }) {
   const map = useMap();
   const hasInitialFitRef = useRef(false);
+  const seenImageIdsRef = useRef(new Set());
   const [viewBounds, setViewBounds] = useState(null);
   const [viewZoom, setViewZoom] = useState(12);
   const [renderCount, setRenderCount] = useState(20);
@@ -655,28 +761,31 @@ function SocalFireOverlays({ imageType, imageTransforms, availableImageSet }) {
     setFailedImageIds(new Set());
   }, [imageType]);
 
-  return prioritizedVisibleImages.slice(0, renderCount).map((image) => (
-    <LeafletImageOverlay
-      key={image.id}
-      url={image.url}
-      bounds={image.bounds}
-      opacity={0.85}
-      interactive={false}
-      eventHandlers={{
-        error: () => {
+  return prioritizedVisibleImages.slice(0, renderCount).map((image) => {
+    const animateOnAdd = !seenImageIdsRef.current.has(image.id);
+    if (animateOnAdd) {
+      seenImageIdsRef.current.add(image.id);
+    }
+
+    return (
+      <FadingImageOverlay
+        key={image.id}
+        image={image}
+        animateOnAdd={animateOnAdd}
+        onError={(imageId) => {
           setFailedImageIds((current) => {
-            if (current.has(image.id)) {
+            if (current.has(imageId)) {
               return current;
             }
 
             const next = new Set(current);
-            next.add(image.id);
+            next.add(imageId);
             return next;
           });
-        }
-      }}
-    />
-  ));
+        }}
+      />
+    );
+  });
 }
 
 function App() {
@@ -689,6 +798,8 @@ function App() {
   const [availableImageSet, setAvailableImageSet] = useState(null);
   const [mapBounds, setMapBounds] = useState(null);
   const [houseObservations, setHouseObservations] = useState([]);
+  const [labelPolygons, setLabelPolygons] = useState([]);
+  const [isChatOpen, setIsChatOpen] = useState(true);
 
   useEffect(() => {
     const loadAvailableImages = async () => {
@@ -713,11 +824,13 @@ function App() {
   useEffect(() => {
     const loadTransformsFromLabels = async () => {
       if (!availableImageSet || availableImageSet.size === 0) {
+        setImageTransforms({});
+        setLabelPolygons([]);
         return;
       }
 
       const imageFiles = Array.from(availableImageSet).filter((filename) => filename.startsWith('socal-fire_'));
-      const transformEntries = await Promise.all(
+      const labelEntries = await Promise.all(
         imageFiles.map(async (imageFilename) => {
           const labelFilename = imageFilename.replace(/\.png$/i, '.json');
 
@@ -734,7 +847,13 @@ function App() {
               return null;
             }
 
-            return [imageFilename, transform];
+            const polygons = buildUndeterminedPolygonsFromLabel(labelData, imageFilename, transform);
+
+            return {
+              imageFilename,
+              transform,
+              polygons
+            };
           } catch (error) {
             console.warn(`Failed to derive transform from ${labelFilename}.`, error);
             return null;
@@ -742,17 +861,26 @@ function App() {
         })
       );
 
-      const nextTransforms = transformEntries.reduce((accumulator, entry) => {
+      const nextTransforms = labelEntries.reduce((accumulator, entry) => {
         if (!entry) {
           return accumulator;
         }
 
-        const [filename, transform] = entry;
-        accumulator[filename] = transform;
+        accumulator[entry.imageFilename] = entry.transform;
         return accumulator;
       }, {});
 
+      const nextLabelPolygons = labelEntries.reduce((accumulator, entry) => {
+        if (!entry || !Array.isArray(entry.polygons) || entry.polygons.length === 0) {
+          return accumulator;
+        }
+
+        accumulator.push(...entry.polygons);
+        return accumulator;
+      }, []);
+
       setImageTransforms(nextTransforms);
+      setLabelPolygons(nextLabelPolygons);
     };
 
     loadTransformsFromLabels();
@@ -940,7 +1068,7 @@ function App() {
   return (
     <div style={{ width: '100%', height: '90vh', display: 'flex', flexDirection: 'column' }}>
       <h1>Damage Assessment Dashboard</h1>
-      <div style={{ display: 'flex', flex: 1 }}>
+      <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
         {selectedPolygon && (
           <div style={{ width: '300px', display: 'flex', flexDirection: 'column', border: '1px solid #ddd', borderRadius: '10px', margin: '10px' }}>
             <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
@@ -951,7 +1079,7 @@ function App() {
             <button onClick={() => setSelectedPolygon(null)} style={{ padding: '8px 16px', margin: '10px' }}>Close</button>
           </div>
         )}
-        <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', minWidth: 0, margin: '0 10px' }}>
           <MapContainer 
             center={[34.5, -119.6]} 
             zoom={12} 
@@ -959,10 +1087,15 @@ function App() {
           >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' />
             <MapBoundsController bounds={mapBounds} />
+            <MapResizeController chatOpen={isChatOpen} />
             <SocalFireOverlays
               imageType={imageType}
               imageTransforms={imageTransforms}
               availableImageSet={availableImageSet}
+            />
+            <LabelPolygonOverlays
+              polygons={labelPolygons}
+              imageType={imageType}
             />
             <HouseConditionOverlays
               houses={houseObservations}
@@ -990,29 +1123,67 @@ function App() {
             </div>
           </div>
         </div>
-        <div style={{ flex: 0.5, minWidth: '280px', maxWidth: '420px', display: 'flex', flexDirection: 'column', border: '1px solid #ddd', borderRadius: '10px', margin: '10px' }}>
-          <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
-            {messages.map((msg, index) => (
-              <div key={index} style={{ marginBottom: '10px', textAlign: msg.sender === 'user' ? 'right' : 'left' }}>
-                <span style={{ background: '#f1f1f1', color: 'black', padding: '8px', borderRadius: '10px' }}>{msg.text}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', padding: '10px' }}>
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-              style={{ flex: 1, padding: '8px' }}
-              placeholder="Type a message..."
-              disabled={isLoading}
-            />
-            <button onClick={sendMessage} disabled={isLoading} style={{ padding: '8px 16px' }}>
-              {isLoading ? 'Sending...' : 'Send'}
+        {isChatOpen && (
+          <div style={{ position: 'relative', flex: 0.5, minWidth: '280px', maxWidth: '420px', display: 'flex', flexDirection: 'column', border: '1px solid #ddd', borderRadius: '10px', margin: '10px' }}>
+            <button
+              type="button"
+              onClick={() => setIsChatOpen(false)}
+              style={{
+                position: 'absolute',
+                top: '8px',
+                right: '8px',
+                zIndex: 2,
+                padding: '6px 12px',
+                borderRadius: '8px'
+              }}
+            >
+              Hide
             </button>
+
+            <div style={{ flex: 1, overflowY: 'auto', padding: '38px 10px 10px' }}>
+              {messages.map((msg, index) => (
+                <div key={index} style={{ marginBottom: '10px', textAlign: msg.sender === 'user' ? 'right' : 'left' }}>
+                  <span style={{ background: '#f1f1f1', color: 'black', padding: '8px', borderRadius: '10px' }}>{msg.text}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', padding: '10px' }}>
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                style={{ flex: 1, padding: '8px' }}
+                placeholder="Type a message..."
+                disabled={isLoading}
+              />
+              <button onClick={sendMessage} disabled={isLoading} style={{ padding: '8px 16px' }}>
+                {isLoading ? 'Sending...' : 'Send'}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
+        {!isChatOpen && (
+          <button
+            type="button"
+            onClick={() => setIsChatOpen(true)}
+            style={{
+              position: 'absolute',
+              right: '10px',
+              top: '10px',
+              transform: 'rotate(180deg)',
+              padding: '12px 8px',
+              borderTopLeftRadius: '10px',
+              borderBottomLeftRadius: '10px',
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+              letterSpacing: '0.08em',
+              zIndex: 1200
+            }}
+          >
+            Chat
+          </button>
+        )}
       </div>
     </div>
   );
