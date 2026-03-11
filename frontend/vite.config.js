@@ -4,12 +4,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const DATA_DIR = path.resolve(__dirname, '../data')
+const EVALUATION_DIR = path.resolve(__dirname, '../evaluation')
 
-function serveRepoDataDirectory() {
+function serveRepoDirectory(routePrefix, baseDir) {
   return {
-    name: 'serve-repo-data-directory',
+    name: `serve-repo-${routePrefix}-directory`,
     configureServer(server) {
-      server.middlewares.use('/data', (req, res, next) => {
+      server.middlewares.use(`/${routePrefix}`, (req, res, next) => {
         if (req.method !== 'GET' && req.method !== 'HEAD') {
           next()
           return
@@ -17,9 +18,9 @@ function serveRepoDataDirectory() {
 
         const requestPath = decodeURIComponent((req.url || '/').split('?')[0])
         const relativePath = requestPath.replace(/^\/+/, '')
-        const absolutePath = path.resolve(DATA_DIR, relativePath)
+        const absolutePath = path.resolve(baseDir, relativePath)
 
-        if (!absolutePath.startsWith(DATA_DIR)) {
+        if (!absolutePath.startsWith(baseDir)) {
           res.statusCode = 403
           res.end('Forbidden')
           return
@@ -38,7 +39,8 @@ function serveRepoDataDirectory() {
             '.jpg': 'image/jpeg',
             '.jpeg': 'image/jpeg',
             '.tif': 'image/tiff',
-            '.tiff': 'image/tiff'
+            '.tiff': 'image/tiff',
+            '.csv': 'text/csv; charset=utf-8'
           }
 
           res.setHeader('Content-Type', contentTypes[ext] || 'application/octet-stream')
@@ -51,12 +53,17 @@ function serveRepoDataDirectory() {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), serveRepoDataDirectory()],
+  plugins: [
+    react(),
+    serveRepoDirectory('data', DATA_DIR),
+    serveRepoDirectory('evaluation', EVALUATION_DIR)
+  ],
   server: {
     fs: {
       allow: [
         searchForWorkspaceRoot(process.cwd()),
-        DATA_DIR
+        DATA_DIR,
+        EVALUATION_DIR
       ]
     }
   }

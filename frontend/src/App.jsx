@@ -378,7 +378,7 @@ function normalizeBoundaryLatLng(house, transform) {
   return normalized.length >= 3 ? normalized : null;
 }
 
-function buildUndeterminedPolygonsFromLabel(labelData, imageId, transform) {
+function buildLabelPolygonsFromLabel(labelData, imageId, transform) {
   const xyFeatures = labelData?.features?.xy;
 
   if (!Array.isArray(xyFeatures) || xyFeatures.length === 0) {
@@ -406,12 +406,14 @@ function buildUndeterminedPolygonsFromLabel(labelData, imageId, transform) {
       }
 
       const uid = feature?.properties?.uid || `feature-${index}`;
+      const condition = normalizeCondition(feature?.properties?.subtype || 'unknown');
 
       return {
         id: `${imageId}-${uid}`,
+        uid,
         imageId,
         boundary,
-        condition: 'unknown'
+        condition
       };
     })
     .filter(Boolean);
@@ -442,11 +444,15 @@ function LabelPolygonOverlays({ polygons, imageType }) {
           }}
         >
           <Tooltip direction="top" offset={[0, -4]}>
-            {'Type: unknown'}
+            {`Type: ${normalizeCondition(polygon.condition).replace(/_/g, ' ')}`}
           </Tooltip>
         </Polygon>
       );
     });
+}
+
+function getImagePairKey(imageId) {
+  return String(imageId || '').replace(/_(pre|post)_disaster\.png$/i, '');
 }
 
 function HouseConditionOverlays({ houses, imageTransformsById, imageType }) {
@@ -847,7 +853,7 @@ function App() {
               return null;
             }
 
-            const polygons = buildUndeterminedPolygonsFromLabel(labelData, imageFilename, transform);
+            const polygons = buildLabelPolygonsFromLabel(labelData, imageFilename, transform);
 
             return {
               imageFilename,
@@ -879,8 +885,49 @@ function App() {
         return accumulator;
       }, []);
 
+      // If a matching pre/post pair exists for a house UID, use the post label for both.
+      const postConditionByPairAndUid = new Map();
+      nextLabelPolygons.forEach((polygon) => {
+        const imageId = String(polygon?.imageId || '');
+        if (!imageId.endsWith('_post_disaster.png')) {
+          return;
+        }
+
+        const uid = polygon?.uid;
+        if (!uid) {
+          return;
+        }
+
+        const pairKey = getImagePairKey(imageId);
+        postConditionByPairAndUid.set(`${pairKey}::${uid}`, polygon.condition);
+      });
+
+      const reconciledLabelPolygons = nextLabelPolygons.map((polygon) => {
+        const imageId = String(polygon?.imageId || '');
+        if (!imageId.endsWith('_pre_disaster.png')) {
+          return polygon;
+        }
+
+        const uid = polygon?.uid;
+        if (!uid) {
+          return polygon;
+        }
+
+        const pairKey = getImagePairKey(imageId);
+        const postCondition = postConditionByPairAndUid.get(`${pairKey}::${uid}`);
+
+        if (!postCondition) {
+          return polygon;
+        }
+
+        return {
+          ...polygon,
+          condition: postCondition
+        };
+      });
+
       setImageTransforms(nextTransforms);
-      setLabelPolygons(nextLabelPolygons);
+      setLabelPolygons(reconciledLabelPolygons);
     };
 
     loadTransformsFromLabels();
@@ -1065,6 +1112,14 @@ function App() {
     });
   };
 
+  const damageLegendItems = [
+    { key: 'no_damage', label: 'No Damage' },
+    { key: 'minor_damage', label: 'Minor Damage' },
+    { key: 'major_damage', label: 'Major Damage' },
+    { key: 'destroyed', label: 'Destroyed' },
+    { key: 'unknown', label: 'Unknown' }
+  ];
+
   return (
     <div style={{ width: '100%', height: '90vh', display: 'flex', flexDirection: 'column' }}>
       <h1>Damage Assessment Dashboard</h1>
@@ -1120,6 +1175,31 @@ function App() {
               >
                 After
               </button>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                flexWrap: 'wrap',
+                width: '100%'
+              }}
+            >
+              {damageLegendItems.map((item) => (
+                <div key={item.key} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#ffffff', fontSize: '13px' }}>
+                  <span
+                    style={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      backgroundColor: conditionToColor(item.key),
+                      border: '1px solid rgba(255, 255, 255, 0.8)'
+                    }}
+                  />
+                  {item.label}
+                </div>
+              ))}
             </div>
           </div>
         </div>
