@@ -18,6 +18,7 @@ from resnet_inference import load_model, predict
 IMAGES_DIR = Path("data/train/images")
 LABELS_DIR = Path("data/train/labels")
 OUTPUT_FILE = Path("evaluation/results.csv")
+OUTPUT_FILE_RESNET = Path("evaluation/results_resnet.csv")
 
 SEVERITY = {"no-damage": 0, "minor-damage": 1, "major-damage": 2, "destroyed": 3}
 VALID_LABELS = list(SEVERITY.keys())
@@ -39,6 +40,7 @@ def get_ground_truth(label_path: Path) -> str | None:
 def main():
     IMAGES_DIR.resolve()
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT_FILE_RESNET.parent.mkdir(parents=True, exist_ok=True)
 
     post_images = sorted(IMAGES_DIR.glob("*_post_disaster.png"))
     if not post_images:
@@ -48,30 +50,47 @@ def main():
     print(f"Loading ResNet model and running on {len(post_images)} image pairs...")
     model = load_model()
 
-    with open(OUTPUT_FILE, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["image_name", "vlm_prediction", "ground_truth"])
+    # Write both:
+    # - `evaluation/results.csv` (keeps compatibility with existing metrics/evaluation scripts)
+    # - `evaluation/results_resnet.csv` (used by the frontend tint endpoint)
+    with (
+        open(OUTPUT_FILE, "w", newline="") as f_vanilla,
+        open(OUTPUT_FILE_RESNET, "w", newline="") as f_resnet,
+    ):
+        writer_vanilla = csv.writer(f_vanilla)
+        writer_resnet = csv.writer(f_resnet)
+        header = ["image_name", "vlm_prediction", "ground_truth"]
+        writer_vanilla.writerow(header)
+        writer_resnet.writerow(header)
 
         for i, post_path in enumerate(post_images):
             pre_path = IMAGES_DIR / post_path.name.replace("_post_", "_pre_")
             label_path = LABELS_DIR / post_path.name.replace(".png", ".json")
 
-            if not pre_path.exists() or not label_path.exists():
+            # We can always run ResNet inference as long as the pre+post images exist.
+            # Ground-truth labels (xView2 JSON) are not available for every tile in the
+            # "available-images" manifest, so we treat missing/invalid JSON as "un-classified".
+            if not pre_path.exists():
                 continue
 
-            ground_truth = get_ground_truth(label_path)
-            if ground_truth is None:
-                continue
+            ground_truth = "un-classified"
+            if label_path.exists():
+                gt = get_ground_truth(label_path)
+                if gt is not None:
+                    ground_truth = gt
 
             pred = predict(model, pre_path, post_path)
             if pred not in VALID_LABELS:
                 pred = "no-damage"
 
-            writer.writerow([post_path.name, pred, ground_truth])
+            row = [post_path.name, pred, ground_truth]
+            writer_vanilla.writerow(row)
+            writer_resnet.writerow(row)
             if (i + 1) % 50 == 0 or i == 0:
                 print(f"  {i + 1}/{len(post_images)}: {post_path.name} -> {pred} (gt: {ground_truth})")
 
     print(f"Done! Results saved to {OUTPUT_FILE}")
+    print(f"Done! ResNet results saved to {OUTPUT_FILE_RESNET}")
     print("Run evaluation:  python evaluation/metrics.py   then   python evaluation/evaluation.py")
 
 

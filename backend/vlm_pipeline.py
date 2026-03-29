@@ -3,10 +3,11 @@ import io
 import json
 import os
 import re
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import APIConnectionError, APITimeoutError, APIStatusError, OpenAI, RateLimitError
 from PIL import Image
 
 load_dotenv(Path(__file__).parent.parent / ".env")
@@ -128,25 +129,48 @@ def _parse_vlm_response(raw: str) -> str:
     return "unclear"
 
 
-def _call_vlm(pre_b64: str, post_b64: str) -> str:
-    """Send a pre/post image pair to GPT-4o and return a parsed label."""
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": VLM_SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": VLM_USER_PROMPT},
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{pre_b64}"}},
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{post_b64}"}},
+def _call_vlm(pre_b64: str, post_b64: str, max_retries: int = 5) -> str:
+    """Send a pre/post image pair to GPT-4o with retry/backoff."""
+    for attempt in range(max_retries + 1):
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": VLM_SYSTEM_PROMPT},
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": VLM_USER_PROMPT},
+                            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{pre_b64}"}},
+                            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{post_b64}"}},
+                        ],
+                    },
                 ],
-            },
-        ],
-        max_tokens=80,
-    )
-    raw = response.choices[0].message.content or ""
-    return _parse_vlm_response(raw)
+                max_tokens=80,
+            )
+            raw = response.choices[0].message.content or ""
+            return _parse_vlm_response(raw)
+        except (RateLimitError, APITimeoutError, APIConnectionError) as exc:
+            if attempt >= max_retries:
+                raise
+            backoff = min(2 ** attempt, 20) + 0.3
+            print(
+                f"[VLM retry {attempt + 1}/{max_retries}] {type(exc).__name__}; "
+                f"sleeping {backoff:.1f}s..."
+            )
+            time.sleep(backoff)
+        except APIStatusError as exc:
+            # Retry only transient server-side errors (5xx).
+            if exc.status_code < 500 or attempt >= max_retries:
+                raise
+            backoff = min(2 ** attempt, 20) + 0.3
+            print(
+                f"[VLM retry {attempt + 1}/{max_retries}] API {exc.status_code}; "
+                f"sleeping {backoff:.1f}s..."
+            )
+            time.sleep(backoff)
+
+    return "unclear"
 
 
 # ── Public API ────────────────────────────────────────────────────────────────

@@ -18,7 +18,7 @@ LABEL2IDX = {l: i for i, l in enumerate(LABELS)}
 SEVERITY  = {"no-damage": 0, "minor-damage": 1,
              "major-damage": 2, "destroyed": 3}
 
-EPOCHS     = 1
+EPOCHS     = 10
 BATCH_SIZE = 16
 LR         = 1e-4
 IMG_SIZE   = 224

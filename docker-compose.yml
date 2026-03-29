@@ -1,0 +1,27 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "3000:80"
+    volumes:
+      # Mount repo data so the app can fetch /data/train/images and /data/train/labels.
+      - ./data:/data:ro
+      # Mount frontend public assets for /data/socal-fire-available-images.json and /data/socal-fire-house-conditions.json.
+      - ./frontend/public:/frontend_public:ro
+    depends_on:
+      - api
+

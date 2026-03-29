@@ -9,6 +9,8 @@ const IMAGE_WIDTH_PX = 1024;
 const IMAGE_HEIGHT_PX = 1024;
 const IMAGE_SCALE_FACTOR = 1.0125;
 const HOUSE_DATA_URL = '/data/socal-fire-house-conditions.json';
+// In production-like runs, the API is served behind the same origin at `/api/*`
+const API_BASE_URL = 'http://127.0.0.1:8000';
 const CONDITION_COLORS = {
   no_damage: '#2fbf71',
   minor_damage: '#8ccf3f',
@@ -616,7 +618,7 @@ function FadingImageOverlay({ image, animateOnAdd, onError }) {
 }
 
 // Render only overlays in the viewport and chunk them to keep map interactions smooth.
-function SocalFireOverlays({ imageType, imageTransforms, availableImageSet }) {
+function SocalFireOverlays({ imageType, imageTransforms, availableImageSet, tilePredictions }) {
   const map = useMap();
   const hasInitialFitRef = useRef(false);
   const seenImageIdsRef = useRef(new Set());
@@ -774,22 +776,49 @@ function SocalFireOverlays({ imageType, imageTransforms, availableImageSet }) {
     }
 
     return (
-      <FadingImageOverlay
-        key={image.id}
-        image={image}
-        animateOnAdd={animateOnAdd}
-        onError={(imageId) => {
-          setFailedImageIds((current) => {
-            if (current.has(imageId)) {
-              return current;
-            }
+      <React.Fragment key={image.id}>
+        <FadingImageOverlay
+          image={image}
+          animateOnAdd={animateOnAdd}
+          onError={(imageId) => {
+            setFailedImageIds((current) => {
+              if (current.has(imageId)) {
+                return current;
+              }
 
-            const next = new Set(current);
-            next.add(imageId);
-            return next;
-          });
-        }}
-      />
+              const next = new Set(current);
+              next.add(imageId);
+              return next;
+            });
+          }}
+        />
+
+        {tilePredictions?.[image.id] &&
+          image?.bounds &&
+          Number.isFinite(image.bounds.south) &&
+          Number.isFinite(image.bounds.north) &&
+          Number.isFinite(image.bounds.east) &&
+          Number.isFinite(image.bounds.west) && (
+          <Polygon
+            key={`${image.id}__tint`}
+            positions={[
+              [image.bounds.south, image.bounds.west],
+              [image.bounds.south, image.bounds.east],
+              [image.bounds.north, image.bounds.east],
+              [image.bounds.north, image.bounds.west],
+              [image.bounds.south, image.bounds.west],
+            ]}
+            pathOptions={{
+              color: 'transparent',
+              fillColor: conditionToColor(tilePredictions[image.id]),
+              weight: 0,
+              fillOpacity: 0.18,
+              opacity: 1,
+            }}
+            interactive={false}
+          />
+        )}
+      </React.Fragment>
     );
   });
 }
@@ -805,6 +834,7 @@ function App() {
   const [mapBounds, setMapBounds] = useState(null);
   const [houseObservations, setHouseObservations] = useState([]);
   const [labelPolygons, setLabelPolygons] = useState([]);
+  const [tilePredictions, setTilePredictions] = useState({});
   const [isChatOpen, setIsChatOpen] = useState(true);
 
   useEffect(() => {
@@ -825,6 +855,26 @@ function App() {
     };
 
     loadAvailableImages();
+  }, []);
+
+  useEffect(() => {
+    // ResNet image-level tile predictions used for raster tinting.
+    const loadTilePredictions = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/predictions/tiles?phase=both&prefix=socal-fire_`);
+        if (!response.ok) {
+          throw new Error(`Tile prediction fetch failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setTilePredictions(data?.predictions || {});
+      } catch (error) {
+        console.warn('Could not load tile predictions for tinting.', error);
+        setTilePredictions({});
+      }
+    };
+
+    loadTilePredictions();
   }, []);
 
   useEffect(() => {
@@ -1138,15 +1188,23 @@ function App() {
           <MapContainer 
             center={[34.5, -119.6]} 
             zoom={12} 
+            maxZoom={19}
+            maxNativeZoom={19}
             style={{ flex: 1, width: '100%', border: 'none' }}
           >
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' />
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; OpenStreetMap contributors'
+              maxZoom={19}
+              maxNativeZoom={19}
+            />
             <MapBoundsController bounds={mapBounds} />
             <MapResizeController chatOpen={isChatOpen} />
             <SocalFireOverlays
               imageType={imageType}
               imageTransforms={imageTransforms}
               availableImageSet={availableImageSet}
+              tilePredictions={tilePredictions}
             />
             <LabelPolygonOverlays
               polygons={labelPolygons}
