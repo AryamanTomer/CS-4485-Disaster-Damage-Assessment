@@ -858,7 +858,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // ResNet image-level tile predictions used for raster tinting.
     const loadTilePredictions = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/predictions/tiles?phase=both&prefix=socal-fire_`);
@@ -1171,158 +1170,144 @@ function App() {
   ];
 
   return (
-    <div style={{ width: '100%', height: '90vh', display: 'flex', flexDirection: 'column' }}>
-      <h1>Damage Assessment Dashboard</h1>
-      <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
-        {selectedPolygon && (
-          <div style={{ width: '300px', display: 'flex', flexDirection: 'column', border: '1px solid #ddd', borderRadius: '10px', margin: '10px' }}>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
-              <h3>Details</h3>
-              <p><strong>Details</strong></p>
-              <p>Details</p>
+    <div className="dashboard-layout">
+      <div className="dashboard-content">
+        <header className="dashboard-header">
+          <h1>Damage Assessment Dashboard</h1>
+          <p>Southern California Fire</p>
+        </header>
+
+        <div className="dashboard-main">
+          {selectedPolygon && (
+            <div className="details-panel">
+              <div className="details-panel-body">
+                <h3>Details</h3>
+                <p><strong>Details</strong></p>
+                <p>Details</p>
+              </div>
+              <button className="chat-panel-button" onClick={() => setSelectedPolygon(null)}>Close</button>
             </div>
-            <button onClick={() => setSelectedPolygon(null)} style={{ padding: '8px 16px', margin: '10px' }}>Close</button>
-          </div>
-        )}
-        <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', minWidth: 0, margin: '0 10px' }}>
-          <MapContainer 
-            center={[34.5, -119.6]} 
-            zoom={12} 
-            maxZoom={19}
-            maxNativeZoom={19}
-            style={{ flex: 1, width: '100%', border: 'none' }}
-          >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; OpenStreetMap contributors'
-              maxZoom={19}
-              maxNativeZoom={19}
-            />
-            <MapBoundsController bounds={mapBounds} />
-            <MapResizeController chatOpen={isChatOpen} />
-            <SocalFireOverlays
-              imageType={imageType}
-              imageTransforms={imageTransforms}
-              availableImageSet={availableImageSet}
-              tilePredictions={tilePredictions}
-            />
-            <LabelPolygonOverlays
-              polygons={labelPolygons}
-              imageType={imageType}
-            />
-            <HouseConditionOverlays
-              houses={houseObservations}
-              imageTransformsById={imageTransformsById}
-              imageType={imageType}
-            />
-            <GeoJSON data={polygons} style={getPolygonStyle} onEachFeature={onEachFeature} />
-          </MapContainer>
-          <div className="phase-switch-bar">
-            <div className="phase-switch" role="group" aria-label="Switch between pre and post disaster imagery">
-              <button
-                type="button"
-                className={`phase-switch-option ${imageType === 'pre' ? 'active' : ''}`}
-                onClick={() => setImageType('pre')}
+          )}
+
+          <div className="map-panel">
+            <div className="map-stage">
+              <MapContainer
+                center={[34.5, -119.6]}
+                zoom={12}
+                maxZoom={19}
+                maxNativeZoom={19}
+                style={{ flex: 1, width: '100%', border: 'none' }}
               >
-                Before
-              </button>
-              <button
-                type="button"
-                className={`phase-switch-option ${imageType === 'post' ? 'active' : ''}`}
-                onClick={() => setImageType('post')}
-              >
-                After
-              </button>
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; OpenStreetMap contributors'
+                  maxZoom={19}
+                  maxNativeZoom={19}
+                />
+                <MapBoundsController bounds={mapBounds} />
+                <MapResizeController chatOpen={isChatOpen} />
+                <SocalFireOverlays
+                  imageType={imageType}
+                  imageTransforms={imageTransforms}
+                  availableImageSet={availableImageSet}
+                  tilePredictions={tilePredictions}
+                />
+                <LabelPolygonOverlays
+                  polygons={labelPolygons}
+                  imageType={imageType}
+                />
+                <HouseConditionOverlays
+                  houses={houseObservations}
+                  imageTransformsById={imageTransformsById}
+                  imageType={imageType}
+                />
+                <GeoJSON data={polygons} style={getPolygonStyle} onEachFeature={onEachFeature} />
+              </MapContainer>
+
+              <div className="damage-legend-overlay" role="note" aria-label="Damage class legend">
+                {damageLegendItems.map((item) => (
+                  <div key={item.key} className="damage-legend-item">
+                    <span
+                      style={{
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        backgroundColor: conditionToColor(item.key),
+                        border: '1px solid rgba(255, 255, 255, 0.8)'
+                      }}
+                    />
+                    {item.label}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '12px',
-                flexWrap: 'wrap',
-                width: '100%'
-              }}
-            >
-              {damageLegendItems.map((item) => (
-                <div key={item.key} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#ffffff', fontSize: '13px' }}>
-                  <span
-                    style={{
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '50%',
-                      backgroundColor: conditionToColor(item.key),
-                      border: '1px solid rgba(255, 255, 255, 0.8)'
-                    }}
-                  />
-                  {item.label}
-                </div>
-              ))}
+
+            <div className="phase-switch-bar">
+              <div className="phase-switch" role="group" aria-label="Switch between pre and post disaster imagery">
+                <button
+                  type="button"
+                  className={`phase-switch-option ${imageType === 'pre' ? 'active' : ''}`}
+                  onClick={() => setImageType('pre')}
+                >
+                  Before
+                </button>
+                <button
+                  type="button"
+                  className={`phase-switch-option ${imageType === 'post' ? 'active' : ''}`}
+                  onClick={() => setImageType('post')}
+                >
+                  After
+                </button>
+              </div>
             </div>
           </div>
         </div>
-        {isChatOpen && (
-          <div style={{ position: 'relative', flex: 0.5, minWidth: '280px', maxWidth: '420px', display: 'flex', flexDirection: 'column', border: '1px solid #ddd', borderRadius: '10px', margin: '10px' }}>
-            <button
-              type="button"
-              onClick={() => setIsChatOpen(false)}
-              style={{
-                position: 'absolute',
-                top: '8px',
-                right: '8px',
-                zIndex: 2,
-                padding: '6px 12px',
-                borderRadius: '8px'
-              }}
-            >
-              Hide
-            </button>
+      </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '38px 10px 10px' }}>
-              {messages.map((msg, index) => (
-                <div key={index} style={{ marginBottom: '10px', textAlign: msg.sender === 'user' ? 'right' : 'left' }}>
-                  <span style={{ background: '#f1f1f1', color: 'black', padding: '8px', borderRadius: '10px' }}>{msg.text}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ display: 'flex', padding: '10px' }}>
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                style={{ flex: 1, padding: '8px' }}
-                placeholder="Type a message..."
-                disabled={isLoading}
-              />
-              <button onClick={sendMessage} disabled={isLoading} style={{ padding: '8px 16px' }}>
-                {isLoading ? 'Sending...' : 'Send'}
-              </button>
-            </div>
-          </div>
-        )}
-        {!isChatOpen && (
+      {isChatOpen && (
+        <div className="chat-sidebar">
           <button
             type="button"
-            onClick={() => setIsChatOpen(true)}
-            style={{
-              position: 'absolute',
-              right: '10px',
-              top: '10px',
-              transform: 'rotate(180deg)',
-              padding: '12px 8px',
-              borderTopLeftRadius: '10px',
-              borderBottomLeftRadius: '10px',
-              writingMode: 'vertical-rl',
-              textOrientation: 'mixed',
-              letterSpacing: '0.08em',
-              zIndex: 1200
-            }}
+            onClick={() => setIsChatOpen(false)}
+            className="chat-panel-button chat-close-button"
           >
-            Chat
+            Hide
           </button>
-        )}
-      </div>
+
+          <div className="chat-messages">
+            {messages.map((msg, index) => (
+              <div key={index} className={`chat-message-row ${msg.sender === 'user' ? 'chat-message-user' : 'chat-message-bot'}`}>
+                <span className="chat-bubble">{msg.text}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="chat-input-row">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+              className="chat-input"
+              placeholder="Type a message..."
+              disabled={isLoading}
+            />
+            <button className="chat-panel-button" onClick={sendMessage} disabled={isLoading}>
+              {isLoading ? 'Sending...' : 'Send'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!isChatOpen && (
+        <button
+          type="button"
+          className="chat-open-toggle"
+          onClick={() => setIsChatOpen(true)}
+        >
+          Chat
+        </button>
+      )}
     </div>
   );
 }
