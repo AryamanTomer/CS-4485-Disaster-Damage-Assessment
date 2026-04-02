@@ -9,6 +9,8 @@ const IMAGE_WIDTH_PX = 1024;
 const IMAGE_HEIGHT_PX = 1024;
 const IMAGE_SCALE_FACTOR = 1.0125;
 const HOUSE_DATA_URL = '/data/socal-fire-house-conditions.json';
+const NOMINATIM_SEARCH_URL = 'https://nominatim.openstreetmap.org/search';
+const MAP_SEARCH_ZOOM = 18;
 // In production-like runs, the API is served behind the same origin at `/api/*`
 const API_BASE_URL = 'http://127.0.0.1:8000';
 const CONDITION_COLORS = {
@@ -47,6 +49,108 @@ function normalizeCondition(rawCondition) {
 
 function conditionToColor(condition) {
   return CONDITION_COLORS[normalizeCondition(condition)] || CONDITION_COLORS.unknown;
+}
+
+function looksLikeLocationQuery(query) {
+  if (!query) {
+    return false;
+  }
+
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+
+  if (normalized.startsWith('/go ') || normalized.startsWith('/map ')) {
+    return true;
+  }
+
+  if (/\d/.test(normalized)) {
+    return true;
+  }
+
+  return /(street|st\b|avenue|ave\b|road|rd\b|drive|dr\b|lane|ln\b|court|ct\b|circle|cir\b|boulevard|blvd\b|way\b|place|pl\b|trail|trl\b|highway|hwy\b)/.test(normalized);
+}
+
+function parseLocationQuery(input) {
+  const trimmed = String(input || '').trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  if (trimmed.toLowerCase().startsWith('/go ')) {
+    return trimmed.slice(4).trim();
+  }
+
+  if (trimmed.toLowerCase().startsWith('/map ')) {
+    return trimmed.slice(5).trim();
+  }
+
+  return looksLikeLocationQuery(trimmed) ? trimmed : '';
+}
+
+function buildGeocodeRequestUrl(query, bounds, bounded) {
+  const params = new URLSearchParams({
+    format: 'jsonv2',
+    limit: '1',
+    countrycodes: 'us',
+    q: query
+  });
+
+  if (bounded && Array.isArray(bounds) && bounds.length === 2) {
+    const southWest = bounds[0];
+    const northEast = bounds[1];
+
+    if (Array.isArray(southWest) && Array.isArray(northEast)) {
+      const south = Number(southWest[0]);
+      const west = Number(southWest[1]);
+      const north = Number(northEast[0]);
+      const east = Number(northEast[1]);
+
+      if ([south, west, north, east].every(Number.isFinite)) {
+        params.set('viewbox', `${west},${north},${east},${south}`);
+        params.set('bounded', '1');
+      }
+    }
+  }
+
+  return `${NOMINATIM_SEARCH_URL}?${params.toString()}`;
+}
+
+async function geocodeLocationQuery(query, bounds, signal) {
+  const requestUrls = [
+    buildGeocodeRequestUrl(query, bounds, true),
+    buildGeocodeRequestUrl(query, bounds, false)
+  ];
+
+  for (let index = 0; index < requestUrls.length; index += 1) {
+    const response = await fetch(requestUrls[index], {
+      signal,
+      headers: {
+        Accept: 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Geocoding request failed: ${response.status}`);
+    }
+
+    const results = await response.json();
+    const firstResult = Array.isArray(results) ? results[0] : null;
+    const latitude = Number(firstResult?.lat);
+    const longitude = Number(firstResult?.lon);
+
+    if (firstResult && Number.isFinite(latitude) && Number.isFinite(longitude)) {
+      return {
+        lat: latitude,
+        lng: longitude,
+        zoom: MAP_SEARCH_ZOOM,
+        label: firstResult.display_name || query
+      };
+    }
+  }
+
+  return null;
 }
 
 function getImageExtentFromTransform(transform) {
@@ -598,6 +702,23 @@ function MapResizeController({ chatOpen }) {
   return null;
 }
 
+function MapSearchController({ target }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!target || !Number.isFinite(target.lat) || !Number.isFinite(target.lng)) {
+      return;
+    }
+
+    map.flyTo([target.lat, target.lng], target.zoom || MAP_SEARCH_ZOOM, {
+      animate: true,
+      duration: 1.2
+    });
+  }, [map, target]);
+
+  return null;
+}
+
 function FadingImageOverlay({ image, animateOnAdd, onError }) {
   return (
     <LeafletImageOverlay
@@ -836,6 +957,8 @@ function App() {
   const [labelPolygons, setLabelPolygons] = useState([]);
   const [tilePredictions, setTilePredictions] = useState({});
   const [isChatOpen, setIsChatOpen] = useState(true);
+  const [mapSearchTarget, setMapSearchTarget] = useState(null);
+  const mapSearchAbortRef = useRef(null);
 
   useEffect(() => {
     const loadAvailableImages = async () => {
@@ -1047,23 +1170,62 @@ function App() {
     ]);
   }, [imageTransforms, availableImageSet]);
 
+  useEffect(() => {
+    return () => {
+      if (mapSearchAbortRef.current) {
+        mapSearchAbortRef.current.abort();
+      }
+    };
+  }, []);
+
   const sendMessage = async () => {
-    if (input.trim() && !isLoading) {
-      const userMessage = { text: input, sender: 'user' };
+    const submittedText = input.trim();
+    if (submittedText && !isLoading) {
+      const userMessage = { text: submittedText, sender: 'user' };
       setMessages(prev => [...prev, userMessage]);
       setInput('');
       setIsLoading(true);
+
       try {
-          const res = await fetch('http://127.0.0.1:8000/chat', {
+        const locationQuery = parseLocationQuery(submittedText);
+        if (locationQuery) {
+          if (mapSearchAbortRef.current) {
+            mapSearchAbortRef.current.abort();
+          }
+
+          const abortController = new AbortController();
+          mapSearchAbortRef.current = abortController;
+
+          const searchResult = await geocodeLocationQuery(locationQuery, mapBounds, abortController.signal);
+          if (searchResult) {
+            setMapSearchTarget({
+              ...searchResult,
+              requestedQuery: locationQuery,
+              searchedAt: Date.now()
+            });
+            setMessages(prev => [...prev, { text: `Moved map to ${searchResult.label}.`, sender: 'bot' }]);
+            return;
+          }
+
+          setMessages(prev => [...prev, { text: `I couldn't find "${locationQuery}" on the map.`, sender: 'bot' }]);
+          return;
+        }
+
+        const res = await fetch('http://127.0.0.1:8000/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: input }),
+          body: JSON.stringify({ message: submittedText }),
         });
         const data = await res.json();
         setMessages(prev => [...prev, { text: data.response, sender: 'bot' }]);
       } catch (error) {
-        setMessages(prev => [...prev, { text: 'Error: Could not connect to backend', sender: 'bot' }]);
+        if (error?.name === 'AbortError') {
+          return;
+        }
+
+        setMessages(prev => [...prev, { text: 'Error: Could not complete request', sender: 'bot' }]);
       } finally {
+        mapSearchAbortRef.current = null;
         setIsLoading(false);
       }
     }
@@ -1206,6 +1368,7 @@ function App() {
                 />
                 <MapBoundsController bounds={mapBounds} />
                 <MapResizeController chatOpen={isChatOpen} />
+                <MapSearchController target={mapSearchTarget} />
                 <SocalFireOverlays
                   imageType={imageType}
                   imageTransforms={imageTransforms}
@@ -1221,6 +1384,21 @@ function App() {
                   imageTransformsById={imageTransformsById}
                   imageType={imageType}
                 />
+                {mapSearchTarget && (
+                  <CircleMarker
+                    center={[mapSearchTarget.lat, mapSearchTarget.lng]}
+                    radius={8}
+                    fillColor="#7ce0ff"
+                    color="#08131d"
+                    weight={2}
+                    opacity={1}
+                    fillOpacity={0.95}
+                  >
+                    <Tooltip direction="top" offset={[0, -8]}>
+                      {mapSearchTarget.label}
+                    </Tooltip>
+                  </CircleMarker>
+                )}
                 <GeoJSON data={polygons} style={getPolygonStyle} onEachFeature={onEachFeature} />
               </MapContainer>
 
@@ -1289,12 +1467,16 @@ function App() {
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
               className="chat-input"
-              placeholder="Type a message..."
+              placeholder="Type /go 123 Main St or ask a question..."
               disabled={isLoading}
             />
             <button className="chat-panel-button" onClick={sendMessage} disabled={isLoading}>
               {isLoading ? 'Sending...' : 'Send'}
             </button>
+          </div>
+
+          <div className="chat-console-hint">
+            Use <strong>/go</strong> plus a street or house address to move the map.
           </div>
         </div>
       )}

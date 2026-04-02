@@ -194,6 +194,13 @@
   gap: 8px;
 }
 
+.chat-console-hint {
+  padding: 0 12px 12px;
+  color: rgba(229, 237, 245, 0.7);
+  font-size: 0.8rem;
+  text-align: left;
+}
+
 .chat-input {
   flex: 1;
   padding: 8px;

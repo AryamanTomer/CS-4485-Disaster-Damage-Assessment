@@ -52,6 +52,7 @@ Place the xView2 dataset so you have:
 | `backend/vlm_pipeline.py` | Single-image damage assessment (demo) | Optional: test the VLM on one pre/post pair. |
 | `backend/batch_evaluate.py` | Run VLM on many images and save predictions | Produces `evaluation/results.csv` (VLM). |
 | `backend/batch_evaluate_resnet.py` | Run ResNet-18 on all image pairs and save predictions | Produces `evaluation/results.csv` (ResNet); same format for metrics. |
+| `preprocessing/match_house_addresses.py` | Reverse-geocode house coordinates/polygons into street addresses | Optional: enrich `socal-fire-house-conditions.json` with address guesses. |
 | `api/main.py` | FastAPI backend skeleton with config and health route | Run for backend API development (`/health`). |
 | `evaluation/metrics.py` | Accuracy, classification report, confusion matrix | **Run after** batch evaluation; reads `results.csv`, writes `confusion_matrix.png`. |
 
@@ -70,9 +71,14 @@ python backend/batch_evaluate_resnet.py   # ResNet-18 (local; no API cost)
 # 2) Compute metrics and save confusion matrix
 python evaluation/metrics.py
 
+# Optional: reverse-geocode house locations to address guesses
+python preprocessing/match_house_addresses.py --limit 20
+
 # 3) Run FastAPI backend skeleton
 python -m uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
 ```
+
+The address-matching utility reads `frontend/public/data/socal-fire-house-conditions.json`, computes a representative point for each house, and sends reverse-geocode requests to OpenStreetMap Nominatim. It writes JSON and CSV results under `evaluation/`. Use a small `--limit` first because public geocoding services are rate-limited.
 
 To show the confusion matrix plot window when running metrics:
 
