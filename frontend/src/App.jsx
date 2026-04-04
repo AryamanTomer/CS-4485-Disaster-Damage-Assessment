@@ -958,6 +958,11 @@ function App() {
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [mapSearchTarget, setMapSearchTarget] = useState(null);
   const mapSearchAbortRef = useRef(null);
+  const [vlmPostName, setVlmPostName] = useState('');
+  const [vlmMode, setVlmMode] = useState('crops');
+  const [vlmLoading, setVlmLoading] = useState(false);
+  const [vlmError, setVlmError] = useState(null);
+  const [vlmResult, setVlmResult] = useState(null);
 
   useEffect(() => {
     const loadAvailableImages = async () => {
@@ -997,6 +1002,49 @@ function App() {
 
     loadTilePredictions();
   }, []);
+
+  const vlmPostOptions = useMemo(() => {
+    if (!availableImageSet) {
+      return [];
+    }
+    return Array.from(availableImageSet)
+      .filter((f) => f.endsWith('_post_disaster.png'))
+      .filter((f) => f.startsWith('socal-fire_'))
+      .sort();
+  }, [availableImageSet]);
+
+  useEffect(() => {
+    if (vlmPostOptions.length > 0 && !vlmPostName) {
+      setVlmPostName(vlmPostOptions[0]);
+    }
+  }, [vlmPostOptions, vlmPostName]);
+
+  const runVlm = async () => {
+    if (!vlmPostName) {
+      return;
+    }
+    setVlmLoading(true);
+    setVlmError(null);
+    setVlmResult(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/vlm/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ post_image_name: vlmPostName, mode: vlmMode }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const detail = data.detail;
+        const msg = typeof detail === 'string' ? detail : JSON.stringify(detail ?? data);
+        throw new Error(msg || 'VLM request failed');
+      }
+      setVlmResult(data);
+    } catch (err) {
+      setVlmError(err.message || String(err));
+    } finally {
+      setVlmLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadTransformsFromLabels = async () => {
@@ -1400,6 +1448,46 @@ function App() {
                 )}
                 <GeoJSON data={polygons} style={getPolygonStyle} onEachFeature={onEachFeature} />
               </MapContainer>
+
+              <div className="vlm-panel" role="region" aria-label="GPT-4o Vision VLM">
+                <div className="vlm-panel-title">GPT-4o Vision (VLM)</div>
+                <label className="vlm-panel-label" htmlFor="vlm-tile-select">Post tile</label>
+                <select
+                  id="vlm-tile-select"
+                  className="vlm-panel-select"
+                  value={vlmPostName}
+                  onChange={(e) => setVlmPostName(e.target.value)}
+                >
+                  {vlmPostOptions.map((f) => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
+                <label className="vlm-panel-label vlm-panel-row" htmlFor="vlm-mode-select">
+                  <span>Mode</span>
+                  <select
+                    id="vlm-mode-select"
+                    className="vlm-panel-select vlm-panel-select--narrow"
+                    value={vlmMode}
+                    onChange={(e) => setVlmMode(e.target.value)}
+                  >
+                    <option value="crops">Building crops (labels)</option>
+                    <option value="full">Full tile images</option>
+                  </select>
+                </label>
+                <button type="button" className="vlm-panel-button" onClick={runVlm} disabled={vlmLoading || !vlmPostName}>
+                  {vlmLoading ? 'Running…' : 'Run VLM'}
+                </button>
+                {vlmError && <p className="vlm-panel-error">{vlmError}</p>}
+                {vlmResult && (
+                  <div className="vlm-panel-result">
+                    <div><strong>VLM:</strong> {vlmResult.label}</div>
+                    {vlmResult.resnet_label ? (
+                      <div><strong>ResNet (batch):</strong> {vlmResult.resnet_label}</div>
+                    ) : null}
+                    <div className="vlm-panel-meta">mode: {vlmResult.mode}</div>
+                  </div>
+                )}
+              </div>
 
               <div className="damage-legend-overlay" role="note" aria-label="Damage class legend">
                 {damageLegendItems.map((item) => (
