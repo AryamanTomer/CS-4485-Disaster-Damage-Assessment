@@ -352,7 +352,7 @@ hurricane-harvey_00000055_post_disaster.png,major-damage,major-damage,hurricane-
 hurricane-harvey_00000056_post_disaster.png,no-damage,no-damage,hurricane-harvey,YES
 hurricane-harvey_00000057_post_disaster.png,no-damage,no-damage,hurricane-harvey,YES
 hurricane-harvey_00000059_post_disaster.png,no-damage,no-damage,hurricane-harvey,YES
-hurricane-harvey_00000060_post_disaster.png,major-damage,minor-damage,hurricane-harvey,NO
+hurricane-harvey_00000060_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
 hurricane-harvey_00000061_post_disaster.png,no-damage,no-damage,hurricane-harvey,YES
 hurricane-harvey_00000066_post_disaster.png,minor-damage,minor-damage,hurricane-harvey,YES
 hurricane-harvey_00000069_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
@@ -399,7 +399,7 @@ hurricane-harvey_00000137_post_disaster.png,no-damage,major-damage,hurricane-har
 hurricane-harvey_00000138_post_disaster.png,minor-damage,minor-damage,hurricane-harvey,YES
 hurricane-harvey_00000141_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
 hurricane-harvey_00000142_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
-hurricane-harvey_00000144_post_disaster.png,major-damage,minor-damage,hurricane-harvey,NO
+hurricane-harvey_00000144_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
 hurricane-harvey_00000145_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
 hurricane-harvey_00000146_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
 hurricane-harvey_00000147_post_disaster.png,no-damage,major-damage,hurricane-harvey,NO
@@ -492,7 +492,7 @@ hurricane-harvey_00000312_post_disaster.png,major-damage,major-damage,hurricane-
 hurricane-harvey_00000315_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
 hurricane-harvey_00000316_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
 hurricane-harvey_00000317_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
-hurricane-harvey_00000319_post_disaster.png,no-damage,no-damage,hurricane-harvey,YES
+hurricane-harvey_00000319_post_disaster.png,no-damage,major-damage,hurricane-harvey,NO
 hurricane-harvey_00000320_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
 hurricane-harvey_00000323_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
 hurricane-harvey_00000325_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
@@ -519,7 +519,7 @@ hurricane-harvey_00000365_post_disaster.png,major-damage,major-damage,hurricane-
 hurricane-harvey_00000366_post_disaster.png,no-damage,no-damage,hurricane-harvey,YES
 hurricane-harvey_00000367_post_disaster.png,no-damage,no-damage,hurricane-harvey,YES
 hurricane-harvey_00000369_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
-hurricane-harvey_00000373_post_disaster.png,major-damage,minor-damage,hurricane-harvey,NO
+hurricane-harvey_00000373_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
 hurricane-harvey_00000374_post_disaster.png,no-damage,no-damage,hurricane-harvey,YES
 hurricane-harvey_00000375_post_disaster.png,no-damage,no-damage,hurricane-harvey,YES
 hurricane-harvey_00000379_post_disaster.png,no-damage,no-damage,hurricane-harvey,YES
@@ -575,7 +575,7 @@ hurricane-harvey_00000455_post_disaster.png,no-damage,no-damage,hurricane-harvey
 hurricane-harvey_00000461_post_disaster.png,no-damage,no-damage,hurricane-harvey,YES
 hurricane-harvey_00000462_post_disaster.png,no-damage,major-damage,hurricane-harvey,NO
 hurricane-harvey_00000463_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
-hurricane-harvey_00000467_post_disaster.png,major-damage,minor-damage,hurricane-harvey,NO
+hurricane-harvey_00000467_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
 hurricane-harvey_00000469_post_disaster.png,no-damage,no-damage,hurricane-harvey,YES
 hurricane-harvey_00000470_post_disaster.png,no-damage,major-damage,hurricane-harvey,NO
 hurricane-harvey_00000471_post_disaster.png,major-damage,major-damage,hurricane-harvey,YES
@@ -792,7 +792,7 @@ hurricane-matthew_00000310_post_disaster.png,destroyed,destroyed,hurricane-matth
 hurricane-matthew_00000311_post_disaster.png,no-damage,no-damage,hurricane-matthew,YES
 hurricane-matthew_00000312_post_disaster.png,destroyed,destroyed,hurricane-matthew,YES
 hurricane-matthew_00000314_post_disaster.png,destroyed,destroyed,hurricane-matthew,YES
-hurricane-matthew_00000316_post_disaster.png,destroyed,minor-damage,hurricane-matthew,NO
+hurricane-matthew_00000316_post_disaster.png,destroyed,major-damage,hurricane-matthew,NO
 hurricane-matthew_00000321_post_disaster.png,destroyed,minor-damage,hurricane-matthew,NO
 hurricane-matthew_00000322_post_disaster.png,destroyed,destroyed,hurricane-matthew,YES
 hurricane-matthew_00000328_post_disaster.png,destroyed,destroyed,hurricane-matthew,YES
@@ -894,7 +894,7 @@ hurricane-michael_00000099_post_disaster.png,no-damage,no-damage,hurricane-micha
 hurricane-michael_00000100_post_disaster.png,no-damage,no-damage,hurricane-michael,YES
 hurricane-michael_00000101_post_disaster.png,minor-damage,minor-damage,hurricane-michael,YES
 hurricane-michael_00000102_post_disaster.png,no-damage,no-damage,hurricane-michael,YES
-hurricane-michael_00000103_post_disaster.png,no-damage,minor-damage,hurricane-michael,NO
+hurricane-michael_00000103_post_disaster.png,no-damage,major-damage,hurricane-michael,NO
 hurricane-michael_00000104_post_disaster.png,no-damage,no-damage,hurricane-michael,YES
 hurricane-michael_00000109_post_disaster.png,no-damage,no-damage,hurricane-michael,YES
 hurricane-michael_00000110_post_disaster.png,no-damage,no-damage,hurricane-michael,YES
@@ -909,7 +909,7 @@ hurricane-michael_00000130_post_disaster.png,minor-damage,minor-damage,hurricane
 hurricane-michael_00000133_post_disaster.png,no-damage,minor-damage,hurricane-michael,NO
 hurricane-michael_00000134_post_disaster.png,no-damage,no-damage,hurricane-michael,YES
 hurricane-michael_00000135_post_disaster.png,no-damage,no-damage,hurricane-michael,YES
-hurricane-michael_00000136_post_disaster.png,minor-damage,minor-damage,hurricane-michael,YES
+hurricane-michael_00000136_post_disaster.png,minor-damage,major-damage,hurricane-michael,NO
 hurricane-michael_00000137_post_disaster.png,no-damage,no-damage,hurricane-michael,YES
 hurricane-michael_00000141_post_disaster.png,no-damage,no-damage,hurricane-michael,YES
 hurricane-michael_00000142_post_disaster.png,no-damage,no-damage,hurricane-michael,YES
@@ -988,7 +988,7 @@ hurricane-michael_00000257_post_disaster.png,no-damage,no-damage,hurricane-micha
 hurricane-michael_00000258_post_disaster.png,no-damage,no-damage,hurricane-michael,YES
 hurricane-michael_00000260_post_disaster.png,no-damage,no-damage,hurricane-michael,YES
 hurricane-michael_00000261_post_disaster.png,no-damage,no-damage,hurricane-michael,YES
-hurricane-michael_00000263_post_disaster.png,no-damage,minor-damage,hurricane-michael,NO
+hurricane-michael_00000263_post_disaster.png,no-damage,major-damage,hurricane-michael,NO
 hurricane-michael_00000265_post_disaster.png,minor-damage,minor-damage,hurricane-michael,YES
 hurricane-michael_00000266_post_disaster.png,no-damage,minor-damage,hurricane-michael,NO
 hurricane-michael_00000267_post_disaster.png,no-damage,no-damage,hurricane-michael,YES

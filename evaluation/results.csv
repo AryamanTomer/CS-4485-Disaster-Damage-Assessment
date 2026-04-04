@@ -124,7 +124,7 @@ hurricane-florence_00000189_post_disaster.png,major-damage,major-damage
 hurricane-florence_00000190_post_disaster.png,no-damage,no-damage
 hurricane-florence_00000191_post_disaster.png,no-damage,no-damage
 hurricane-florence_00000192_post_disaster.png,major-damage,major-damage
-hurricane-florence_00000193_post_disaster.png,no-damage,major-damage
+hurricane-florence_00000193_post_disaster.png,no-damage,no-damage
 hurricane-florence_00000194_post_disaster.png,major-damage,un-classified
 hurricane-florence_00000195_post_disaster.png,minor-damage,major-damage
 hurricane-florence_00000199_post_disaster.png,no-damage,no-damage
@@ -189,7 +189,7 @@ hurricane-florence_00000315_post_disaster.png,no-damage,no-damage
 hurricane-florence_00000316_post_disaster.png,no-damage,no-damage
 hurricane-florence_00000319_post_disaster.png,minor-damage,minor-damage
 hurricane-florence_00000320_post_disaster.png,no-damage,no-damage
-hurricane-florence_00000324_post_disaster.png,no-damage,minor-damage
+hurricane-florence_00000324_post_disaster.png,no-damage,no-damage
 hurricane-florence_00000325_post_disaster.png,no-damage,no-damage
 hurricane-florence_00000328_post_disaster.png,no-damage,no-damage
 hurricane-florence_00000329_post_disaster.png,major-damage,major-damage
@@ -204,7 +204,7 @@ hurricane-florence_00000337_post_disaster.png,no-damage,no-damage
 hurricane-florence_00000338_post_disaster.png,major-damage,no-damage
 hurricane-florence_00000340_post_disaster.png,no-damage,no-damage
 hurricane-florence_00000341_post_disaster.png,minor-damage,minor-damage
-hurricane-florence_00000344_post_disaster.png,minor-damage,minor-damage
+hurricane-florence_00000344_post_disaster.png,minor-damage,no-damage
 hurricane-florence_00000345_post_disaster.png,no-damage,no-damage
 hurricane-florence_00000346_post_disaster.png,no-damage,no-damage
 hurricane-florence_00000347_post_disaster.png,no-damage,no-damage
@@ -328,7 +328,7 @@ hurricane-florence_00000523_post_disaster.png,minor-damage,minor-damage
 hurricane-florence_00000526_post_disaster.png,minor-damage,minor-damage
 hurricane-florence_00000527_post_disaster.png,no-damage,no-damage
 hurricane-florence_00000529_post_disaster.png,no-damage,no-damage
-hurricane-florence_00000531_post_disaster.png,major-damage,major-damage
+hurricane-florence_00000531_post_disaster.png,major-damage,no-damage
 hurricane-florence_00000533_post_disaster.png,no-damage,no-damage
 hurricane-florence_00000536_post_disaster.png,minor-damage,minor-damage
 hurricane-florence_00000537_post_disaster.png,no-damage,no-damage
@@ -361,7 +361,7 @@ hurricane-harvey_00000035_post_disaster.png,major-damage,major-damage
 hurricane-harvey_00000039_post_disaster.png,major-damage,major-damage
 hurricane-harvey_00000040_post_disaster.png,major-damage,major-damage
 hurricane-harvey_00000041_post_disaster.png,destroyed,major-damage
-hurricane-harvey_00000042_post_disaster.png,major-damage,minor-damage
+hurricane-harvey_00000042_post_disaster.png,major-damage,no-damage
 hurricane-harvey_00000043_post_disaster.png,major-damage,major-damage
 hurricane-harvey_00000045_post_disaster.png,major-damage,major-damage
 hurricane-harvey_00000046_post_disaster.png,major-damage,un-classified
@@ -416,7 +416,7 @@ hurricane-harvey_00000118_post_disaster.png,major-damage,un-classified
 hurricane-harvey_00000119_post_disaster.png,no-damage,no-damage
 hurricane-harvey_00000123_post_disaster.png,major-damage,major-damage
 hurricane-harvey_00000126_post_disaster.png,major-damage,major-damage
-hurricane-harvey_00000128_post_disaster.png,major-damage,major-damage
+hurricane-harvey_00000128_post_disaster.png,major-damage,destroyed
 hurricane-harvey_00000129_post_disaster.png,major-damage,major-damage
 hurricane-harvey_00000130_post_disaster.png,major-damage,destroyed
 hurricane-harvey_00000132_post_disaster.png,major-damage,major-damage
@@ -491,7 +491,7 @@ hurricane-harvey_00000244_post_disaster.png,destroyed,destroyed
 hurricane-harvey_00000245_post_disaster.png,no-damage,no-damage
 hurricane-harvey_00000248_post_disaster.png,major-damage,major-damage
 hurricane-harvey_00000249_post_disaster.png,no-damage,no-damage
-hurricane-harvey_00000251_post_disaster.png,destroyed,major-damage
+hurricane-harvey_00000251_post_disaster.png,destroyed,destroyed
 hurricane-harvey_00000255_post_disaster.png,destroyed,major-damage
 hurricane-harvey_00000257_post_disaster.png,major-damage,major-damage
 hurricane-harvey_00000258_post_disaster.png,major-damage,major-damage
@@ -656,7 +656,7 @@ hurricane-harvey_00000519_post_disaster.png,no-damage,no-damage
 hurricane-harvey_00000520_post_disaster.png,major-damage,major-damage
 hurricane-harvey_00000521_post_disaster.png,major-damage,major-damage
 hurricane-matthew_00000000_post_disaster.png,minor-damage,minor-damage
-hurricane-matthew_00000001_post_disaster.png,destroyed,minor-damage
+hurricane-matthew_00000001_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000002_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000003_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000004_post_disaster.png,no-damage,un-classified
@@ -697,7 +697,7 @@ hurricane-matthew_00000065_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000066_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000067_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000069_post_disaster.png,no-damage,no-damage
-hurricane-matthew_00000070_post_disaster.png,minor-damage,minor-damage
+hurricane-matthew_00000070_post_disaster.png,minor-damage,no-damage
 hurricane-matthew_00000071_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000072_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000075_post_disaster.png,no-damage,minor-damage
@@ -739,7 +739,7 @@ hurricane-matthew_00000137_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000139_post_disaster.png,minor-damage,no-damage
 hurricane-matthew_00000140_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000143_post_disaster.png,minor-damage,minor-damage
-hurricane-matthew_00000145_post_disaster.png,destroyed,major-damage
+hurricane-matthew_00000145_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000149_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000152_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000153_post_disaster.png,destroyed,destroyed
@@ -777,13 +777,13 @@ hurricane-matthew_00000195_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000197_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000198_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000200_post_disaster.png,destroyed,destroyed
-hurricane-matthew_00000202_post_disaster.png,destroyed,major-damage
+hurricane-matthew_00000202_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000204_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000205_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000206_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000207_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000208_post_disaster.png,destroyed,destroyed
-hurricane-matthew_00000209_post_disaster.png,minor-damage,major-damage
+hurricane-matthew_00000209_post_disaster.png,minor-damage,destroyed
 hurricane-matthew_00000211_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000212_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000213_post_disaster.png,destroyed,destroyed
@@ -795,8 +795,8 @@ hurricane-matthew_00000223_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000226_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000228_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000231_post_disaster.png,destroyed,destroyed
-hurricane-matthew_00000232_post_disaster.png,destroyed,major-damage
-hurricane-matthew_00000233_post_disaster.png,destroyed,minor-damage
+hurricane-matthew_00000232_post_disaster.png,destroyed,destroyed
+hurricane-matthew_00000233_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000234_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000237_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000238_post_disaster.png,destroyed,destroyed
@@ -822,21 +822,21 @@ hurricane-matthew_00000268_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000269_post_disaster.png,destroyed,un-classified
 hurricane-matthew_00000271_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000275_post_disaster.png,destroyed,destroyed
-hurricane-matthew_00000276_post_disaster.png,destroyed,minor-damage
+hurricane-matthew_00000276_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000278_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000279_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000281_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000283_post_disaster.png,minor-damage,destroyed
 hurricane-matthew_00000284_post_disaster.png,destroyed,minor-damage
-hurricane-matthew_00000285_post_disaster.png,destroyed,major-damage
-hurricane-matthew_00000287_post_disaster.png,destroyed,minor-damage
+hurricane-matthew_00000285_post_disaster.png,destroyed,destroyed
+hurricane-matthew_00000287_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000289_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000293_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000295_post_disaster.png,no-damage,no-damage
 hurricane-matthew_00000296_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000301_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000302_post_disaster.png,no-damage,no-damage
-hurricane-matthew_00000303_post_disaster.png,destroyed,minor-damage
+hurricane-matthew_00000303_post_disaster.png,destroyed,destroyed
 hurricane-matthew_00000305_post_disaster.png,minor-damage,minor-damage
 hurricane-matthew_00000306_post_disaster.png,no-damage,no-damage
 hurricane-matthew_00000307_post_disaster.png,minor-damage,minor-damage
@@ -911,7 +911,7 @@ hurricane-michael_00000020_post_disaster.png,no-damage,un-classified
 hurricane-michael_00000021_post_disaster.png,no-damage,minor-damage
 hurricane-michael_00000024_post_disaster.png,destroyed,destroyed
 hurricane-michael_00000025_post_disaster.png,major-damage,un-classified
-hurricane-michael_00000028_post_disaster.png,major-damage,major-damage
+hurricane-michael_00000028_post_disaster.png,major-damage,no-damage
 hurricane-michael_00000029_post_disaster.png,destroyed,un-classified
 hurricane-michael_00000034_post_disaster.png,minor-damage,minor-damage
 hurricane-michael_00000035_post_disaster.png,no-damage,no-damage
@@ -948,7 +948,7 @@ hurricane-michael_00000081_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000083_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000085_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000087_post_disaster.png,no-damage,no-damage
-hurricane-michael_00000088_post_disaster.png,destroyed,minor-damage
+hurricane-michael_00000088_post_disaster.png,destroyed,destroyed
 hurricane-michael_00000090_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000092_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000093_post_disaster.png,no-damage,un-classified
@@ -957,7 +957,7 @@ hurricane-michael_00000096_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000097_post_disaster.png,major-damage,no-damage
 hurricane-michael_00000098_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000099_post_disaster.png,no-damage,no-damage
-hurricane-michael_00000100_post_disaster.png,no-damage,minor-damage
+hurricane-michael_00000100_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000101_post_disaster.png,minor-damage,minor-damage
 hurricane-michael_00000102_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000103_post_disaster.png,no-damage,major-damage
@@ -975,7 +975,7 @@ hurricane-michael_00000130_post_disaster.png,minor-damage,minor-damage
 hurricane-michael_00000133_post_disaster.png,no-damage,minor-damage
 hurricane-michael_00000134_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000135_post_disaster.png,no-damage,no-damage
-hurricane-michael_00000136_post_disaster.png,minor-damage,minor-damage
+hurricane-michael_00000136_post_disaster.png,minor-damage,major-damage
 hurricane-michael_00000137_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000141_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000142_post_disaster.png,no-damage,no-damage
@@ -992,7 +992,7 @@ hurricane-michael_00000154_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000156_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000157_post_disaster.png,minor-damage,minor-damage
 hurricane-michael_00000158_post_disaster.png,no-damage,no-damage
-hurricane-michael_00000159_post_disaster.png,minor-damage,minor-damage
+hurricane-michael_00000159_post_disaster.png,minor-damage,no-damage
 hurricane-michael_00000162_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000165_post_disaster.png,no-damage,destroyed
 hurricane-michael_00000166_post_disaster.png,major-damage,major-damage
@@ -1069,7 +1069,7 @@ hurricane-michael_00000276_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000281_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000283_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000284_post_disaster.png,no-damage,no-damage
-hurricane-michael_00000285_post_disaster.png,major-damage,major-damage
+hurricane-michael_00000285_post_disaster.png,major-damage,no-damage
 hurricane-michael_00000286_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000287_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000289_post_disaster.png,no-damage,no-damage
@@ -1119,7 +1119,7 @@ hurricane-michael_00000347_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000348_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000349_post_disaster.png,minor-damage,minor-damage
 hurricane-michael_00000351_post_disaster.png,no-damage,no-damage
-hurricane-michael_00000353_post_disaster.png,no-damage,major-damage
+hurricane-michael_00000353_post_disaster.png,no-damage,destroyed
 hurricane-michael_00000355_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000356_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000357_post_disaster.png,no-damage,no-damage
@@ -1140,7 +1140,7 @@ hurricane-michael_00000387_post_disaster.png,minor-damage,no-damage
 hurricane-michael_00000388_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000389_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000391_post_disaster.png,no-damage,no-damage
-hurricane-michael_00000392_post_disaster.png,no-damage,minor-damage
+hurricane-michael_00000392_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000393_post_disaster.png,major-damage,major-damage
 hurricane-michael_00000402_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000403_post_disaster.png,major-damage,no-damage
@@ -1161,7 +1161,7 @@ hurricane-michael_00000421_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000422_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000424_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000427_post_disaster.png,no-damage,no-damage
-hurricane-michael_00000430_post_disaster.png,no-damage,major-damage
+hurricane-michael_00000430_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000435_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000439_post_disaster.png,no-damage,no-damage
 hurricane-michael_00000440_post_disaster.png,no-damage,no-damage
@@ -1510,7 +1510,7 @@ midwest-flooding_00000230_post_disaster.png,no-damage,no-damage
 midwest-flooding_00000231_post_disaster.png,no-damage,no-damage
 midwest-flooding_00000233_post_disaster.png,no-damage,no-damage
 midwest-flooding_00000234_post_disaster.png,no-damage,no-damage
-midwest-flooding_00000235_post_disaster.png,no-damage,major-damage
+midwest-flooding_00000235_post_disaster.png,no-damage,no-damage
 midwest-flooding_00000236_post_disaster.png,no-damage,no-damage
 midwest-flooding_00000237_post_disaster.png,no-damage,no-damage
 midwest-flooding_00000238_post_disaster.png,no-damage,no-damage
@@ -1563,7 +1563,7 @@ midwest-flooding_00000322_post_disaster.png,no-damage,no-damage
 midwest-flooding_00000326_post_disaster.png,major-damage,major-damage
 midwest-flooding_00000328_post_disaster.png,no-damage,no-damage
 midwest-flooding_00000329_post_disaster.png,destroyed,un-classified
-midwest-flooding_00000330_post_disaster.png,destroyed,major-damage
+midwest-flooding_00000330_post_disaster.png,destroyed,destroyed
 midwest-flooding_00000331_post_disaster.png,no-damage,no-damage
 midwest-flooding_00000337_post_disaster.png,no-damage,no-damage
 midwest-flooding_00000338_post_disaster.png,no-damage,no-damage
@@ -1603,9 +1603,9 @@ midwest-flooding_00000391_post_disaster.png,minor-damage,minor-damage
 midwest-flooding_00000392_post_disaster.png,no-damage,no-damage
 midwest-flooding_00000393_post_disaster.png,no-damage,no-damage
 midwest-flooding_00000394_post_disaster.png,no-damage,no-damage
-midwest-flooding_00000395_post_disaster.png,no-damage,major-damage
+midwest-flooding_00000395_post_disaster.png,no-damage,no-damage
 midwest-flooding_00000397_post_disaster.png,no-damage,no-damage
-midwest-flooding_00000398_post_disaster.png,no-damage,minor-damage
+midwest-flooding_00000398_post_disaster.png,no-damage,no-damage
 midwest-flooding_00000399_post_disaster.png,destroyed,major-damage
 midwest-flooding_00000400_post_disaster.png,no-damage,no-damage
 midwest-flooding_00000401_post_disaster.png,no-damage,no-damage
@@ -1791,7 +1791,7 @@ santa-rosa-wildfire_00000060_post_disaster.png,destroyed,destroyed
 santa-rosa-wildfire_00000063_post_disaster.png,destroyed,destroyed
 santa-rosa-wildfire_00000065_post_disaster.png,destroyed,destroyed
 santa-rosa-wildfire_00000067_post_disaster.png,destroyed,destroyed
-santa-rosa-wildfire_00000069_post_disaster.png,destroyed,minor-damage
+santa-rosa-wildfire_00000069_post_disaster.png,destroyed,destroyed
 santa-rosa-wildfire_00000070_post_disaster.png,no-damage,no-damage
 santa-rosa-wildfire_00000072_post_disaster.png,destroyed,no-damage
 santa-rosa-wildfire_00000073_post_disaster.png,destroyed,destroyed
@@ -1916,7 +1916,7 @@ santa-rosa-wildfire_00000268_post_disaster.png,destroyed,destroyed
 santa-rosa-wildfire_00000270_post_disaster.png,destroyed,destroyed
 santa-rosa-wildfire_00000271_post_disaster.png,destroyed,destroyed
 santa-rosa-wildfire_00000272_post_disaster.png,destroyed,destroyed
-santa-rosa-wildfire_00000274_post_disaster.png,destroyed,major-damage
+santa-rosa-wildfire_00000274_post_disaster.png,destroyed,destroyed
 santa-rosa-wildfire_00000275_post_disaster.png,destroyed,destroyed
 santa-rosa-wildfire_00000276_post_disaster.png,destroyed,destroyed
 santa-rosa-wildfire_00000277_post_disaster.png,destroyed,destroyed
@@ -2718,7 +2718,7 @@ socal-fire_00001283_post_disaster.png,no-damage,un-classified
 socal-fire_00001285_post_disaster.png,no-damage,no-damage
 socal-fire_00001286_post_disaster.png,no-damage,un-classified
 socal-fire_00001287_post_disaster.png,no-damage,un-classified
-socal-fire_00001288_post_disaster.png,no-damage,minor-damage
+socal-fire_00001288_post_disaster.png,no-damage,no-damage
 socal-fire_00001289_post_disaster.png,no-damage,un-classified
 socal-fire_00001291_post_disaster.png,destroyed,destroyed
 socal-fire_00001292_post_disaster.png,no-damage,no-damage
