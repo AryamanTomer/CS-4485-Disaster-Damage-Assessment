@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, GeoJSON, CircleMarker, Polygon, Tooltip, Image
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
+import { API_BASE_URL } from './apiConfig.js';
 
 const IMAGE_WIDTH_PX = 1024;
 const IMAGE_HEIGHT_PX = 1024;
@@ -11,8 +12,6 @@ const IMAGE_SCALE_FACTOR = 1.0125;
 const HOUSE_DATA_URL = '/data/socal-fire-house-conditions.json';
 const NOMINATIM_SEARCH_URL = 'https://nominatim.openstreetmap.org/search';
 const MAP_SEARCH_ZOOM = 18;
-// In production-like runs, the API is served behind the same origin at `/api/*`
-const API_BASE_URL = 'http://127.0.0.1:8000';
 const CONDITION_COLORS = {
   no_damage: '#2fbf71',
   minor_damage: '#8ccf3f',
@@ -1211,7 +1210,7 @@ function App() {
           return;
         }
 
-        const res = await fetch('http://127.0.0.1:8000/chat', {
+        const res = await fetch(`${API_BASE_URL}/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: submittedText }),

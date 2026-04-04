@@ -15,13 +15,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.web
+      args:
+        VITE_API_BASE_URL: /api
     ports:
       - "3000:80"
     volumes:
-      # Mount repo data so the app can fetch /data/train/images and /data/train/labels.
       - ./data:/data:ro
-      # Mount frontend public assets for /data/socal-fire-available-images.json and /data/socal-fire-house-conditions.json.
       - ./frontend/public:/frontend_public:ro
     depends_on:
       - api
-

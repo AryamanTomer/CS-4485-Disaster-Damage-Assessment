@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     api_key: str = ""
     database_url: str = ""
     openai_api_key: str = ""
+    predictions_metadata_path: str = "evaluation/predictions_with_metadata.json"
 
     model_config = SettingsConfigDict(
         env_file=".env",
