@@ -21,6 +21,20 @@ const CONDITION_COLORS = {
   unknown: '#00c2ff'
 };
 
+// Types of queries that can be submitted
+const QUERY_TYPES = Object.freeze({
+  NA: 'n/a',
+  LOCATION: 'location',
+  FILTER: 'filter'
+});
+
+// Query prefixes and their corresponding types
+const QUERY_PREFIXES = Object.freeze({
+  '/go ': QUERY_TYPES.LOCATION,
+  '/map ': QUERY_TYPES.LOCATION,
+  '/filter ': QUERY_TYPES.FILTER
+});
+
 function normalizeCondition(rawCondition) {
   if (!rawCondition) {
     return 'unknown';
@@ -72,21 +86,27 @@ function looksLikeLocationQuery(query) {
   return /(street|st\b|avenue|ave\b|road|rd\b|drive|dr\b|lane|ln\b|court|ct\b|circle|cir\b|boulevard|blvd\b|way\b|place|pl\b|trail|trl\b|highway|hwy\b)/.test(normalized);
 }
 
-function parseLocationQuery(input) {
+// Parses query to determine its type and value
+function parseQuery(input) {
   const trimmed = String(input || '').trim();
+  
+  // Return N/A if query is empty
   if (!trimmed) {
-    return '';
+    return { type: QUERY_TYPES.NA, value: '' };
   }
 
-  if (trimmed.toLowerCase().startsWith('/go ')) {
-    return trimmed.slice(4).trim();
+  // Prefix of query
+  queryPrefix = trimmed.toLowerCase().split(' ')[0] + ' ';
+  
+  // If query prefix is valid, returns query type and query value
+  if (Object.keys(QUERY_PREFIXES).includes(queryPrefix)) {
+    return { type: QUERY_PREFIXES[queryPrefix], value: trimmed.slice(queryPrefix.length).trim() };
   }
 
-  if (trimmed.toLowerCase().startsWith('/map ')) {
-    return trimmed.slice(5).trim();
-  }
-
-  return looksLikeLocationQuery(trimmed) ? trimmed : '';
+  // If query prefix is invalid, and:
+  //    - Query value looks like location query: treat as location query.
+  //    - Otherwise: treat as N/A
+  return looksLikeLocationQuery(trimmed) ? { type: QUERY_TYPES.LOCATION, value: trimmed } : { type: QUERY_TYPES.NA, value: '' };
 }
 
 function buildGeocodeRequestUrl(query, bounds, bounded) {
@@ -525,7 +545,7 @@ function buildLabelPolygonsFromLabel(labelData, imageId, transform) {
     .filter(Boolean);
 }
 
-function LabelPolygonOverlays({ polygons, imageType }) {
+function LabelPolygonOverlays({ polygons, imageType, conditionVisible }) {
   const suffix = imageType === 'pre' ? '_pre_disaster.png' : '_post_disaster.png';
 
   if (!Array.isArray(polygons) || polygons.length === 0) {
@@ -533,7 +553,11 @@ function LabelPolygonOverlays({ polygons, imageType }) {
   }
 
   return polygons
-    .filter((polygon) => polygon.imageId && String(polygon.imageId).endsWith(suffix))
+    .filter((polygon) =>
+      polygon.imageId &&
+      String(polygon.imageId).endsWith(suffix) &&
+      conditionVisible[normalizeCondition(polygon.condition)]
+    )
     .map((polygon) => {
       const fillColor = conditionToColor(polygon.condition);
 
@@ -561,7 +585,7 @@ function getImagePairKey(imageId) {
   return String(imageId || '').replace(/_(pre|post)_disaster\.png$/i, '');
 }
 
-function HouseConditionOverlays({ houses, imageTransformsById, imageType }) {
+function HouseConditionOverlays({ houses, imageTransformsById, imageType, conditionVisible }) {
   const normalizedHouses = useMemo(() => {
     if (!Array.isArray(houses) || houses.length === 0) {
       return [];
@@ -630,47 +654,49 @@ function HouseConditionOverlays({ houses, imageTransformsById, imageType }) {
       .filter(Boolean);
   }, [houses, imageTransformsById, imageType]);
 
-  return normalizedHouses.map((house) => {
-    const condition = house.condition;
-    const fillColor = conditionToColor(condition);
+  return normalizedHouses
+    .filter((house) => conditionVisible[normalizeCondition(house.condition)])
+    .map((house) => {
+      const condition = house.condition;
+      const fillColor = conditionToColor(condition);
 
-    if (house.geometryType === 'polygon') {
+      if (house.geometryType === 'polygon') {
+        return (
+          <Polygon
+            key={house.id}
+            positions={house.boundary}
+            pathOptions={{
+              color: fillColor,
+              weight: 1.5,
+              fillColor,
+              fillOpacity: 0.25,
+              opacity: 0.95
+            }}
+          >
+            <Tooltip direction="top" offset={[0, -4]}>
+              {`Condition: ${condition.replace(/_/g, ' ')}`}
+            </Tooltip>
+          </Polygon>
+        );
+      }
+
       return (
-        <Polygon
+        <CircleMarker
           key={house.id}
-          positions={house.boundary}
-          pathOptions={{
-            color: fillColor,
-            weight: 1.5,
-            fillColor,
-            fillOpacity: 0.25,
-            opacity: 0.95
-          }}
+          center={[house.lat, house.lng]}
+          radius={4}
+          fillColor={fillColor}
+          color="#1d2433"
+          weight={1}
+          opacity={0.95}
+          fillOpacity={0.88}
         >
           <Tooltip direction="top" offset={[0, -4]}>
             {`Condition: ${condition.replace(/_/g, ' ')}`}
           </Tooltip>
-        </Polygon>
+        </CircleMarker>
       );
-    }
-
-    return (
-      <CircleMarker
-        key={house.id}
-        center={[house.lat, house.lng]}
-        radius={4}
-        fillColor={fillColor}
-        color="#1d2433"
-        weight={1}
-        opacity={0.95}
-        fillOpacity={0.88}
-      >
-        <Tooltip direction="top" offset={[0, -4]}>
-          {`Condition: ${condition.replace(/_/g, ' ')}`}
-        </Tooltip>
-      </CircleMarker>
-    );
-  });
+    });
 }
 
 // Component to enforce map bounds
@@ -945,6 +971,13 @@ function SocalFireOverlays({ imageType, imageTransforms, availableImageSet, tile
 }
 
 function App() {
+  const [conditionVisible, setConditionVisible] = useState({
+    no_damage: true,
+    minor_damage: true,
+    major_damage: true,
+    destroyed: true,
+    unknown: true
+  });
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -1187,8 +1220,8 @@ function App() {
       setIsLoading(true);
 
       try {
-        const locationQuery = parseLocationQuery(submittedText);
-        if (locationQuery) {
+        const query = parseQuery(submittedText);
+        if (query.type === QUERY_TYPES.LOCATION && query.value) {
           if (mapSearchAbortRef.current) {
             mapSearchAbortRef.current.abort();
           }
@@ -1196,20 +1229,47 @@ function App() {
           const abortController = new AbortController();
           mapSearchAbortRef.current = abortController;
 
-          const searchResult = await geocodeLocationQuery(locationQuery, mapBounds, abortController.signal);
+          const searchResult = await geocodeLocationQuery(query.value, mapBounds, abortController.signal);
           if (searchResult) {
             setMapSearchTarget({
               ...searchResult,
-              requestedQuery: locationQuery,
+              requestedQuery: query.value,
               searchedAt: Date.now()
             });
             setMessages(prev => [...prev, { text: `Moved map to ${searchResult.label}.`, sender: 'bot' }]);
             return;
           }
 
-          setMessages(prev => [...prev, { text: `I couldn't find "${locationQuery}" on the map.`, sender: 'bot' }]);
+          setMessages(prev => [...prev, { text: `I couldn't find "${query.value}" on the map.`, sender: 'bot' }]);
           return;
         }
+        else if (query.type === QUERY_TYPES.FILTER && query.value) {
+          const queryWords = String(query.value || '')
+              .split(/\s+/)
+              .filter(Boolean);
+
+          const selectedConditions = new Set(
+            queryWords.filter((w) => Object.prototype.hasOwnProperty.call(conditionVisible, w))
+          );
+
+          const next = {};
+          Object.keys(conditionVisible).forEach((k) => {
+            next[k] = selectedConditions.has(k);
+          });
+          
+          setConditionVisible(next);
+
+          setMessages(prev => [
+            ...prev,
+            {
+              text: `Now showing buildings with conditions: ${Object.keys(next).filter(key => next[key]).join(", ")}.`,
+              sender: 'bot'
+            }
+          ]);
+          
+          return;
+        }
+
 
         const res = await fetch('http://127.0.0.1:8000/chat', {
           method: 'POST',
@@ -1378,11 +1438,13 @@ function App() {
                 <LabelPolygonOverlays
                   polygons={labelPolygons}
                   imageType={imageType}
+                  conditionVisible={conditionVisible}
                 />
                 <HouseConditionOverlays
                   houses={houseObservations}
                   imageTransformsById={imageTransformsById}
                   imageType={imageType}
+                  conditionVisible={conditionVisible}
                 />
                 {mapSearchTarget && (
                   <CircleMarker
