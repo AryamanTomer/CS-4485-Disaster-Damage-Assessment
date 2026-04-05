@@ -96,3 +96,30 @@ $env:SHOW_PLOT="1"; python evaluation/metrics.py
 
 ## Team
 CS 4485 Project Team – UTD
+
+### 4. Frontend + API base URL
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+By default the UI calls the API at `http://127.0.0.1:8000` (see `frontend/src/apiConfig.js`).
+
+- To use the **same-origin `/api` proxy** as in Docker (Vite proxies to port 8000), create `frontend/.env.development.local`:
+
+  `VITE_API_BASE_URL=/api`
+
+- **Docker** (`docker compose`): the web image is built with `VITE_API_BASE_URL=/api` so the browser calls `/api/...` and nginx forwards to FastAPI.
+
+### 5. Predictions JSON + chatbot
+
+After batch evaluation, export merged predictions + coordinates:
+
+```powershell
+python backend/export_predictions_metadata.py
+```
+
+The chat endpoint (`POST /chat`) reads **`evaluation/predictions_with_metadata.json`**, not CSV. Override path with env `PREDICTIONS_METADATA_PATH` if needed.
+

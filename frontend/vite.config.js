@@ -59,6 +59,13 @@ export default defineConfig({
     serveRepoDirectory('evaluation', EVALUATION_DIR)
   ],
   server: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
     fs: {
       allow: [
         searchForWorkspaceRoot(process.cwd()),

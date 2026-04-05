@@ -92,6 +92,15 @@ def main():
     print(f"Done! Results saved to {OUTPUT_FILE}")
     print(f"Done! ResNet results saved to {OUTPUT_FILE_RESNET}")
     print("Run evaluation:  python evaluation/metrics.py   then   python evaluation/evaluation.py")
+    try:
+        _root = Path(__file__).resolve().parents[1]
+        if str(_root) not in sys.path:
+            sys.path.insert(0, str(_root))
+        from backend.export_predictions_metadata import export_predictions_metadata_json
+        meta_path = export_predictions_metadata_json()
+        print(f"Metadata JSON: {meta_path}")
+    except Exception as exc:
+        print(f"Note: metadata JSON export skipped: {exc}")
 
 
 if __name__ == "__main__":

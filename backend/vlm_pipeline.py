@@ -92,8 +92,13 @@ def get_building_crops(image_path: Path, label_path: Path, padding: int = 20):
     with open(label_path) as f:
         data = json.load(f)
 
+    features = data.get("features") or {}
+    xy = features.get("xy")
+    if not xy:
+        return []
+
     buildings = []
-    for feature in data["features"]["xy"]:
+    for feature in xy:
         uid = feature["properties"].get("uid", "unknown")
         subtype = feature["properties"].get("subtype", "unknown")
         wkt_xy = feature["wkt"]
@@ -151,6 +156,15 @@ def _call_vlm(pre_b64: str, post_b64: str, max_retries: int = 5) -> str:
             raw = response.choices[0].message.content or ""
             return _parse_vlm_response(raw)
         except (RateLimitError, APITimeoutError, APIConnectionError) as exc:
+            if isinstance(exc, RateLimitError):
+                err_body = getattr(exc, "body", None)
+                if isinstance(err_body, dict):
+                    code = (err_body.get("error") or {}).get("code")
+                    if code == "insufficient_quota":
+                        raise
+                msg = str(exc).lower()
+                if "insufficient_quota" in msg:
+                    raise
             if attempt >= max_retries:
                 raise
             backoff = min(2 ** attempt, 20) + 0.3
