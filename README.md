@@ -3,101 +3,99 @@
 This project explores automated damage assessment from pre- and post-disaster aerial imagery using Vision-Language Models (VLMs).
 
 ## Objectives
+
 - Analyze pre- and post-disaster imagery using a VLM pipeline
 - Visualize damage assessments in a geospatial dashboard
 - Provide a chatbot interface for querying disaster impacts
 - Evaluate predictions against FEMA ground-truth labels
 
 ## Dataset
+
 We use the xView2 Challenge dataset for building damage assessment.
 
 > Note: Due to size constraints, datasets are not stored in this repository.
 
-## Tech Stack (Planned)
-- Python (backend, data handling)
-- Vision-Language Models (API-based)
-- Leaflet / Mapbox (geospatial visualization)
-- React (frontend dashboard)
+## Tech stack
 
-## How to Run
+- Python (backend, data handling, evaluation)
+- Vision-Language Models (OpenAI API)
+- Leaflet (geospatial visualization)
+- React + Vite (frontend dashboard)
+- FastAPI (HTTP API: tiles, chat, on-demand VLM)
 
 ## How to run
 
-Use the project’s **Python 3.12** virtual environment (`.venv`) so all dependencies and the same interpreter are used everywhere.
+Use the project’s **Python 3.12** virtual environment (`.venv`) so dependencies and the interpreter stay consistent.
 
 ### 1. One-time setup
 
 ```powershell
-cd E:\CS-4485-Disaster-Damage-Assessment
+cd <your-repo-clone>
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
-Create a `.env` in the project root with your OpenAI API key (needed for the VLM pipeline):
+**Environment:** create a `.env` in the **project root** (same folder as this README). Copy [`.env.example`](.env.example) and set at least:
 
 ```
 OPENAI_API_KEY=sk-...
 ```
 
-Place the xView2 dataset so you have:
+Optional: `PREDICTIONS_METADATA_PATH` if your merged predictions JSON lives somewhere other than `evaluation/predictions_with_metadata.json`.
 
-- `data/train/images/` — pre/post disaster PNGs (e.g. `*_pre_disaster.png`, `*_post_disaster.png`)
-- `data/train/labels/` — one JSON per image (same base name as the image, `.json`)
+**Data layout** (required for map tiles and VLM paths):
 
-### 2. Scripts and order
+- `data/train/images/` — pre/post PNGs (e.g. `*_pre_disaster.png`, `*_post_disaster.png`)
+- `data/train/labels/` — one JSON per image (same basename as the image, `.json`)
+
+### 2. Scripts (batch / offline)
 
 | Script | Purpose | When to run |
-|--------|--------|-------------|
-| `backend/vlm_pipeline.py` | Single-image damage assessment (demo) | Optional: test the VLM on one pre/post pair. |
-| `backend/batch_evaluate.py` | Run VLM on many images and save predictions | Produces `evaluation/results.csv` (VLM). |
-| `backend/batch_evaluate_resnet.py` | Run ResNet-18 on all image pairs and save predictions | Produces `evaluation/results.csv` (ResNet); same format for metrics. |
-| `preprocessing/match_house_addresses.py` | Reverse-geocode house coordinates/polygons into street addresses | Optional: enrich `socal-fire-house-conditions.json` with address guesses. |
-| `api/main.py` | FastAPI backend skeleton with config and health route | Run for backend API development (`/health`). |
-| `evaluation/metrics.py` | Accuracy, classification report, confusion matrix | **Run after** batch evaluation; reads `results.csv`, writes `confusion_matrix.png`. |
+|--------|---------|-------------|
+| `backend/vlm_pipeline.py` | Single-image VLM demo | Optional smoke test |
+| `backend/batch_evaluate.py` | VLM batch → CSV | Produces `evaluation/results.csv` (costs OpenAI usage) |
+| `backend/batch_evaluate_resnet.py` | ResNet-18 batch → CSV | Local; no API cost |
+| `backend/export_predictions_metadata.py` | Merge predictions + coords for chat | After batch eval; feeds chat UI |
+| `preprocessing/match_house_addresses.py` | Reverse-geocode houses | Optional |
+| `evaluation/metrics.py` | Metrics + confusion matrix | After `results.csv` exists |
 
-All commands below assume the project root is the current directory and the venv is activated (or Cursor is using `.venv` as the interpreter).
-
-**Run from project root:**
+From project root (venv activated):
 
 ```powershell
-# Optional: test one image pair
+# Optional: one pair
 python backend/vlm_pipeline.py
 
-# 1) Generate predictions — use one of:
-python backend/batch_evaluate.py          # VLM (OpenAI; costs depend on image count)
-python backend/batch_evaluate_resnet.py   # ResNet-18 (local; no API cost)
+# Predictions (pick one pipeline):
+python backend/batch_evaluate.py
+# or
+python backend/batch_evaluate_resnet.py
 
-# 2) Compute metrics and save confusion matrix
 python evaluation/metrics.py
 
-# Optional: reverse-geocode house locations to address guesses
+# Optional geocoding (rate-limited):
 python preprocessing/match_house_addresses.py --limit 20
-
-# 3) Run FastAPI backend skeleton
-python -m uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-The address-matching utility reads `frontend/public/data/socal-fire-house-conditions.json`, computes a representative point for each house, and sends reverse-geocode requests to OpenStreetMap Nominatim. It writes JSON and CSV results under `evaluation/`. Use a small `--limit` first because public geocoding services are rate-limited.
-
-To show the confusion matrix plot window when running metrics:
+Show the confusion matrix plot when running metrics:
 
 ```powershell
 $env:SHOW_PLOT="1"; python evaluation/metrics.py
 ```
 
-### 3. In Cursor / VS Code
+The address matcher reads `frontend/public/data/socal-fire-house-conditions.json` and writes under `evaluation/`.
 
-- Select the **`.venv` (Python 3.12)** interpreter (status bar or **Python: Select Interpreter**).
-- Use **Run and Debug** and pick the config for the script you want:
-  - **Python: backend/vlm_pipeline.py**
-  - **Python: backend/batch_evaluate.py**
-  - **Python: evaluation/metrics.py**
+### 3. FastAPI (required for dashboard + chat + live VLM)
 
-## Team
-CS 4485 Project Team – UTD
+```powershell
+python -m uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
+```
 
-### 4. Frontend + API base URL
+Use **port 8000** — the dev frontend is configured to call `http://127.0.0.1:8000` (see `frontend/src/apiConfig.js`).
+
+Health check: `GET http://127.0.0.1:8000/health`, or open `http://127.0.0.1:8000/docs` for OpenAPI.
+
+### 4. Frontend
 
 ```powershell
 cd frontend
@@ -105,21 +103,38 @@ npm install
 npm run dev
 ```
 
-By default the UI calls the API at `http://127.0.0.1:8000` (see `frontend/src/apiConfig.js`).
+Open the URL Vite prints (e.g. `http://localhost:5173`).
 
-- To use the **same-origin `/api` proxy** as in Docker (Vite proxies to port 8000), create `frontend/.env.development.local`:
+**API URL in development:** `npm run dev` uses **`http://127.0.0.1:8000`** for API calls. Keep the FastAPI process on **8000** in a second terminal.
 
-  `VITE_API_BASE_URL=/api`
+Vite can proxy `/api` → `127.0.0.1:8000` (see `frontend/vite.config.js`), but the stock `apiConfig.js` does **not** use `/api` in dev—it points straight at port **8000**. Use the proxy + `VITE_API_BASE_URL` only if you intentionally change `apiConfig.js` to read that variable in dev.
 
-- **Docker** (`docker compose`): the web image is built with `VITE_API_BASE_URL=/api` so the browser calls `/api/...` and nginx forwards to FastAPI.
+**Docker:** `docker compose` builds the web image with `VITE_API_BASE_URL=/api`; nginx serves the SPA and forwards `/api/...` to the API container. See `docker-compose.yml` and `nginx.conf`.
 
-### 5. Predictions JSON + chatbot
+### 5. Chatbot data
 
-After batch evaluation, export merged predictions + coordinates:
+The chat endpoint (`POST /chat`) reads **`evaluation/predictions_with_metadata.json`**, not CSV. Generate it after batch evaluation:
 
 ```powershell
 python backend/export_predictions_metadata.py
 ```
 
-The chat endpoint (`POST /chat`) reads **`evaluation/predictions_with_metadata.json`**, not CSV. Override path with env `PREDICTIONS_METADATA_PATH` if needed.
+Override the file path with `PREDICTIONS_METADATA_PATH` in `.env` if needed.
 
+### 6. Local demo checklist
+
+1. `.env` with `OPENAI_API_KEY` (for live VLM and any OpenAI-backed paths).
+2. Dataset under `data/train/images/` and `data/train/labels/`.
+3. `evaluation/predictions_with_metadata.json` present if you want **chat** (run `export_predictions_metadata.py` when your pipeline is ready).
+4. Terminal A: `uvicorn` on **127.0.0.1:8000**.
+5. Terminal B: `cd frontend` → `npm run dev`.
+6. In the UI: map tiles load; **Run VLM** uses paid API calls; chat uses the JSON above.
+
+### 7. Cursor / VS Code
+
+- Select the **`.venv` (Python 3.12)** interpreter.
+- **Run and Debug** includes configs such as `backend/vlm_pipeline.py`, `batch_evaluate.py`, `evaluation/metrics.py` (see `.vscode/launch.json`).
+
+## Team
+
+CS 4485 Project Team – UTD
