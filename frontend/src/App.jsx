@@ -95,7 +95,7 @@ function parseQuery(input) {
   }
 
   // Prefix of query
-  queryPrefix = trimmed.toLowerCase().split(' ')[0] + ' ';
+  const queryPrefix = trimmed.toLowerCase().split(' ')[0] + ' ';
   
   // If query prefix is valid, returns query type and query value
   if (Object.keys(QUERY_PREFIXES).includes(queryPrefix)) {
@@ -1093,8 +1093,20 @@ function App() {
           const labelFilename = imageFilename.replace(/\.png$/i, '.json');
 
           try {
+            // const response = await fetch(`/data/train/labels/${labelFilename}`);
+            // if (!response.ok) {
+            //   return null;
+            // }
+
+            // const labelData = await response.json();
             const response = await fetch(`/data/train/labels/${labelFilename}`);
             if (!response.ok) {
+              return null;
+            }
+
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+              console.warn(`Label file did not return JSON: ${labelFilename}`);
               return null;
             }
 
@@ -1317,21 +1329,58 @@ function App() {
           return;
         }
 
-
         const res = await fetch(`${API_BASE_URL}/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: submittedText }),
         });
-        const data = await res.json();
-        setMessages(prev => [...prev, { text: data.response, sender: 'bot' }]);
-      } catch (error) {
-        if (error?.name === 'AbortError') {
-          return;
+        
+        const rawText = await res.text();
+        console.log('CHAT STATUS:', res.status);
+        console.log('CHAT RAW RESPONSE:', rawText);
+        
+        let data = {};
+        try {
+          data = rawText ? JSON.parse(rawText) : {};
+        } catch (e) {
+          throw new Error(`Server returned non-JSON: ${rawText.slice(0, 200)}`);
         }
+        
+        if (!res.ok) {
+          throw new Error(data.detail || `Request failed with status ${res.status}`);
+        }
+        
+        if (!data.response) {
+          throw new Error('Missing "response" field from backend');
+        }
+        
+        setMessages(prev => [...prev, { text: data.response, sender: 'bot' }]);
+        // const res = await fetch(`${API_BASE_URL}/chat`, {
+        //   method: 'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({ message: submittedText }),
+        // });
+        // const data = await res.json();
+        // setMessages(prev => [...prev, { text: data.response, sender: 'bot' }]);
+      // } catch (error) {
+      //   if (error?.name === 'AbortError') {
+      //     return;
+      //   }
 
-        setMessages(prev => [...prev, { text: 'Error: Could not complete request', sender: 'bot' }]);
-      } finally {
+      //   setMessages(prev => [...prev, { text: 'Error: Could not complete request', sender: 'bot' }]);
+      // } 
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        return;
+      }
+    
+      console.error('sendMessage failed:', error);
+    
+      setMessages(prev => [
+        ...prev,
+        { text: `Error: ${error.message || 'Could not complete request'}`, sender: 'bot' }
+      ]);
+    } finally {
         mapSearchAbortRef.current = null;
         setIsLoading(false);
       }
