@@ -85,27 +85,51 @@ function looksLikeLocationQuery(query) {
   return /(street|st\b|avenue|ave\b|road|rd\b|drive|dr\b|lane|ln\b|court|ct\b|circle|cir\b|boulevard|blvd\b|way\b|place|pl\b|trail|trl\b|highway|hwy\b)/.test(normalized);
 }
 
-// Parses query to determine its type and value
+// // Parses query to determine its type and value
+// function parseQuery(input) {
+//   const trimmed = String(input || '').trim();
+  
+//   // Return N/A if query is empty
+//   if (!trimmed) {
+//     return { type: QUERY_TYPES.NA, value: '' };
+//   }
+
+//   // Prefix of query
+//   const queryPrefix = trimmed.toLowerCase().split(' ')[0] + ' ';
+  
+//   // If query prefix is valid, returns query type and query value
+//   if (Object.keys(QUERY_PREFIXES).includes(queryPrefix)) {
+//     return { type: QUERY_PREFIXES[queryPrefix], value: trimmed.slice(queryPrefix.length).trim() };
+//   }
+
+//   // If query prefix is invalid, and:
+//   //    - Query value looks like location query: treat as location query.
+//   //    - Otherwise: treat as N/A
+//   return looksLikeLocationQuery(trimmed) ? { type: QUERY_TYPES.LOCATION, value: trimmed } : { type: QUERY_TYPES.NA, value: '' };
+// }
+
 function parseQuery(input) {
   const trimmed = String(input || '').trim();
-  
-  // Return N/A if query is empty
+
   if (!trimmed) {
     return { type: QUERY_TYPES.NA, value: '' };
   }
 
-  // Prefix of query
-  const queryPrefix = trimmed.toLowerCase().split(' ')[0] + ' ';
-  
-  // If query prefix is valid, returns query type and query value
-  if (Object.keys(QUERY_PREFIXES).includes(queryPrefix)) {
-    return { type: QUERY_PREFIXES[queryPrefix], value: trimmed.slice(queryPrefix.length).trim() };
+  const normalized = trimmed.toLowerCase();
+
+  if (normalized.startsWith('/go ')) {
+    return { type: QUERY_TYPES.LOCATION, value: trimmed.slice(4).trim() };
   }
 
-  // If query prefix is invalid, and:
-  //    - Query value looks like location query: treat as location query.
-  //    - Otherwise: treat as N/A
-  return looksLikeLocationQuery(trimmed) ? { type: QUERY_TYPES.LOCATION, value: trimmed } : { type: QUERY_TYPES.NA, value: '' };
+  if (normalized.startsWith('/map ')) {
+    return { type: QUERY_TYPES.LOCATION, value: trimmed.slice(5).trim() };
+  }
+
+  if (normalized.startsWith('/filter ')) {
+    return { type: QUERY_TYPES.FILTER, value: trimmed.slice(8).trim() };
+  }
+
+  return { type: QUERY_TYPES.NA, value: '' };
 }
 
 function buildGeocodeRequestUrl(query, bounds, bounded) {
