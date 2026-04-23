@@ -20,7 +20,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./data:/data:ro
+      - ./data/train:/data/train:ro
       - ./frontend/public:/frontend_public:ro
     depends_on:
       - api
