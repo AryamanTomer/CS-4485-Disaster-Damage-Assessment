@@ -1,243 +1,4 @@
-﻿# # original
-# # from fastapi import APIRouter
-# # from pydantic import BaseModel
-# # import pandas as pd
-# # from openai import OpenAI
-# # from api.config import get_settings
-
-# # router = APIRouter()
-
-# # settings = get_settings()
-# # client = OpenAI(api_key=settings.openai_api_key)
-
-# # class ChatRequest(BaseModel):
-# #     message: str
-
-# # @router.post("/chat")
-# # def chat(body: ChatRequest):
-# #     message = body.message
-
-# #     df = pd.read_csv("evaluation/results.csv")
-
-# #     possible_damage_columns = [
-# #         "damage",
-# #         "predicted_label",
-# #         "prediction",
-# #         "condition",
-# #         "damage_class",
-# #         "vlm_prediction",
-# #         "ground_truth"
-# #     ]
-# #     damage_column = None
-
-# #     for col in possible_damage_columns:
-# #         if col in df.columns:
-# #             damage_column = col
-# #             break
-
-# #     if damage_column is None:
-# #         return {
-# #             "response": f"Chat backend connected, but I could not find a damage column. Columns found: {list(df.columns)}"
-# #         }
-
-# #     values = df[damage_column].astype(str).str.lower().str.strip()
-
-# #     total = len(df)
-# #     destroyed = values.str.contains("destroy").sum()
-# #     major = values.str.contains("major").sum()
-# #     minor = values.str.contains("minor").sum()
-# #     no_damage = values.str.contains("no_damage|no damage|undamaged|none").sum()
-
-# #     context = f"""
-# # You are a wildfire damage assessment assistant.
-
-# # Here are the dataset statistics from evaluation/results.csv:
-# # - Total rows: {total}
-# # - Destroyed: {destroyed}
-# # - Major damage: {major}
-# # - Minor damage: {minor}
-# # - No damage: {no_damage}
-
-# # The CSV columns are: {list(df.columns)}
-# # The damage column being used is: {damage_column}
-
-# # Answer the user's question using only this data.
-# # If the question asks for something not contained in this data, say that clearly.
-# # Keep answers clear and short.
-# # """
-
-# #     response = client.chat.completions.create(
-# #         model="gpt-4o-mini",
-# #         messages=[
-# #             {"role": "system", "content": context},
-# #             {"role": "user", "content": message}
-# #         ],
-# #         temperature=0.2
-# #     )
-
-# #     return {"response": response.choices[0].message.content}
-
-
-# # new 
-# # from fastapi import APIRouter
-# # from pydantic import BaseModel
-# # import pandas as pd
-# # from openai import OpenAI
-# # from api.config import get_settings
-
-# # router = APIRouter()
-
-# # settings = get_settings()
-# # client = OpenAI(api_key=settings.openai_api_key)
-
-# # class ChatRequest(BaseModel):
-# #     message: str
-
-# # @router.post("/chat")
-# # def chat(body: ChatRequest):
-# #     message = body.message
-
-# #     df = pd.read_csv("evaluation/results.csv")
-
-# #     vlm_col = "vlm_prediction"
-# #     gt_col = "ground_truth"
-
-# #     vlm_values = df[vlm_col].astype(str).str.lower().str.strip()
-# #     gt_values = df[gt_col].astype(str).str.lower().str.strip()
-
-# #     total = len(df)
-
-# #     destroyed_vlm = vlm_values.str.contains("destroy").sum()
-# #     destroyed_gt = gt_values.str.contains("destroy").sum()
-
-# #     major = vlm_values.str.contains("major").sum()
-# #     minor = vlm_values.str.contains("minor").sum()
-# #     no_damage = vlm_values.str.contains("no_damage|undamaged|none").sum()
-
-# #     destroyed_percent = round((destroyed_vlm / total) * 100, 2)
-
-# #     context = f"""
-# # You are an AI assistant for a wildfire damage assessment dashboard.
-
-# # You must answer using the dataset statistics below.
-
-# # Dataset statistics:
-# # - Total images: {total}
-# # - Destroyed (model prediction): {destroyed_vlm}
-# # - Destroyed (ground truth): {destroyed_gt}
-# # - Major damage: {major}
-# # - Minor damage: {minor}
-# # - No damage: {no_damage}
-# # - Percent destroyed (model): {destroyed_percent}%
-
-# # Important:
-# # - vlm_prediction = model prediction
-# # - ground_truth = actual labeled damage
-# # - The model may overpredict destroyed damage.
-
-# # When answering:
-# # 1. Answer the question.
-# # 2. Explain what the numbers mean.
-# # 3. Mention differences between prediction and ground truth if relevant.
-# # 4. Write a clear paragraph explanation.
-# # """
-
-# #     response = client.chat.completions.create(
-# #         model="gpt-4o",
-# #         messages=[
-# #             {"role": "system", "content": context},
-# #             {"role": "user", "content": message}
-# #         ],
-# #         temperature=0.4
-# #     )
-
-# #     return {"response": response.choices[0].message.content}
-
-
-# from fastapi import APIRouter
-# from pydantic import BaseModel
-# import pandas as pd
-# from openai import OpenAI
-# from api.config import get_settings
-
-# router = APIRouter()
-
-# settings = get_settings()
-# client = OpenAI(api_key=settings.openai_api_key)
-
-# class ChatRequest(BaseModel):
-#     message: str
-
-# @router.post("/chat")
-# def chat(body: ChatRequest):
-#     message = body.message
-
-#     df = pd.read_csv("evaluation/results.csv")
-
-#     vlm_col = "vlm_prediction"
-#     gt_col = "ground_truth"
-
-#     vlm_values = df[vlm_col].astype(str).str.lower().str.strip()
-#     gt_values = df[gt_col].astype(str).str.lower().str.strip()
-
-#     valid_mask = (
-#         (~vlm_values.isin(["none", "nan", "", "unclassified"])) &
-#         (~gt_values.isin(["none", "nan", "", "unclassified"]))
-#     )
-
-#     vlm_values = vlm_values[valid_mask]
-#     gt_values = gt_values[valid_mask]
-
-#     total = len(vlm_values)
-
-#     destroyed_vlm = vlm_values.str.contains("destroy").sum()
-#     destroyed_gt = gt_values.str.contains("destroy").sum()
-#     major = vlm_values.str.contains("major").sum()
-#     minor = vlm_values.str.contains("minor").sum()
-#     no_damage = vlm_values.str.contains("no_damage|undamaged|none").sum()
-
-#     destroyed_vlm_pct = round((destroyed_vlm / total) * 100, 2) if total else 0
-#     destroyed_gt_pct = round((destroyed_gt / total) * 100, 2) if total else 0
-#     overprediction_ratio = round(destroyed_vlm / destroyed_gt, 2) if destroyed_gt > 0 else 0
-
-#     context = f"""
-# You are an AI assistant for a wildfire damage assessment dashboard.
-
-# Use only the dataset facts below.
-
-# Dataset facts:
-# - Total classified images: {total}
-# - Destroyed (model prediction): {destroyed_vlm} ({destroyed_vlm_pct}%)
-# - Destroyed (ground truth): {destroyed_gt} ({destroyed_gt_pct}%)
-# - Overprediction ratio (prediction / ground truth): {overprediction_ratio}x
-# - Major damage (model prediction): {major}
-# - Minor damage (model prediction): {minor}
-# - No damage (model prediction): {no_damage}
-
-# Definitions:
-# - vlm_prediction = model output
-# - ground_truth = labeled reference answer
-
-# When answering:
-# 1. Answer directly.
-# 2. Explain the numbers briefly.
-# 3. If relevant, compare prediction and ground truth.
-# 4. If the answer is not in the data, say that clearly.
-# 5. Write a concise paragraph, not just one sentence.
-# """
-
-#     response = client.chat.completions.create(
-#         model="gpt-4o",
-#         messages=[
-#             {"role": "system", "content": context},
-#             {"role": "user", "content": message}
-#         ],
-#         temperature=0.3
-#     )
-
-#     return {"response": response.choices[0].message.content}
-
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 from functools import lru_cache
@@ -274,7 +35,7 @@ def _metadata_path() -> Path:
     return ROOT / path
 
 
-@lru_cache(maxsize=2)
+# @lru_cache(maxsize=2)
 def _load_tiles(path_str: str) -> tuple:
     path = Path(path_str)
     if not path.exists():
@@ -422,11 +183,14 @@ def chat(body: ChatRequest):
 
     # Overall evaluation
     exact_matches = int((pred_values == gt_values).sum())
-    accuracy = round(exact_matches / total, 3) if total else 0.0
-
+    accuracy_pct = round((exact_matches / total) * 100, 2)
     confusion = build_confusion_matrix(gt_values, pred_values)
     metrics = per_class_metrics(confusion)
+    destroyed_fp = int(confusion["destroyed"].sum() - confusion.loc["destroyed", "destroyed"])
+    destroyed_fn = int(confusion.loc["destroyed"].sum() - confusion.loc["destroyed", "destroyed"])
 
+    unclassified_fp = int(confusion["un-classified"].sum() - confusion.loc["un-classified", "un-classified"])
+    unclassified_fn = int(confusion.loc["un-classified"].sum() - confusion.loc["un-classified", "un-classified"])
     macro_classes = ["no-damage", "minor-damage", "major-damage", "destroyed"]
     macro_precision = round(sum(float(metrics[c]["precision"]) for c in macro_classes) / len(macro_classes), 3)
     macro_recall = round(sum(float(metrics[c]["recall"]) for c in macro_classes) / len(macro_classes), 3)
@@ -459,7 +223,7 @@ Ground-truth distribution:
 
 Comparison:
 - Exact label matches: {exact_matches}
-- Overall accuracy: {accuracy} ({exact_matches} / {total})
+- Overall accuracy: {accuracy_pct}% ({exact_matches} / {total})
 - Overprediction ratio (prediction / ground truth) for destroyed: {overprediction_ratio}x
 
 Per-class metrics:
@@ -472,21 +236,32 @@ Macro averages over the four damage classes (excluding un-classified):
 
 Confusion matrix (row = ground truth, column = prediction):
 {confusion_text}
-
+Key error counts:
+- Destroyed false positives: {destroyed_fp}
+- Destroyed false negatives: {destroyed_fn}
+- Un-classified false positives: {unclassified_fp}
+- Un-classified false negatives: {unclassified_fn}
 Definitions:
 - prediction = model output
 - ground_truth = labeled reference answer
-
 When answering:
 1. Use only the numbers above.
-2. Answer directly and clearly in 1–4 sentences unless the user explicitly asks for a detailed breakdown.
+2. Answer directly and clearly in 2–4 sentences unless the user explicitly asks for more detail.
 3. Always include both model prediction and ground-truth values when relevant.
 4. If asked about distribution, include counts and percentages.
 5. If asked to compare predictions vs ground truth, include overall accuracy, key count differences, and notable errors.
 6. If relevant, briefly mention precision, recall, F1, or confusion-matrix trends.
-7. Always say the answer is based on the predictions dataset used in the dashboard.
-8. If the answer is not in the data above, say that clearly.
-9. Do not list multiple interpretations or datasets unless the user explicitly asks.
+7. Always include one sentence of insight about model behavior (for example: overprediction, underprediction, missed categories, or class imbalance).
+8. For questions about "most mistakes," you MUST:
+   - identify the class with the most false positives (low precision)
+   - identify the class with the most missed ground-truth cases (high false negatives)
+   - explicitly mention both if they are different classes
+9. If a class is never predicted or has very high missed ground-truth cases, you MUST explicitly mention it as a major source of error.
+10. Do not invent or estimate any numbers. Only use exact values provided above.
+11. Always say the answer is based on the predictions dataset used in the dashboard.
+12. If the answer is not in the data above, say that clearly.
+13. Do not list multiple interpretations or datasets unless the user explicitly asks.
+
 """
 
     response = client.chat.completions.create(
