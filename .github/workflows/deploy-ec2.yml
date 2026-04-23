@@ -20,7 +20,7 @@ jobs:
 
       - name: Deploy on EC2
         run: |
-          ssh -p "${{ secrets.EC2_PORT }}" "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" << 'EOF'
+          ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -p "${{ secrets.EC2_PORT }}" "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" << 'EOF'
             set -e
             cd "${{ secrets.EC2_APP_DIR }}"
             git fetch origin
