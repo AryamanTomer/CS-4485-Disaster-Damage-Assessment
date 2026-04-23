@@ -180,7 +180,15 @@
   text-align: left;
 }
 
-.chat-bubble {
+.chat-bubble-user {
+  display: inline-block;
+  background: #2563eb;
+  color: #fff;
+  padding: 8px;
+  border-radius: 10px;
+}
+
+.chat-bubble-bot {
   display: inline-block;
   background: #f1f1f1;
   color: #111111;
