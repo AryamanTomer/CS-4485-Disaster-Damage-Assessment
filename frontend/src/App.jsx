@@ -1396,11 +1396,11 @@ function App() {
                 requestedQuery: query.value,
                 searchedAt: Date.now()
               });
-              setMessages(prev => [...prev, { text: `Moved map to ${searchResult.label}.`, sender: 'bot' }]);
+              setMessages(prev => [...prev, { text: `Moved map to ${searchResult.label}.`, sender: 'system' }]);
               continue;
             }
 
-            setMessages(prev => [...prev, { text: `I couldn't find "${query.value}" on the map.`, sender: 'bot' }]);
+            setMessages(prev => [...prev, { text: `Could not find "${query.value}" on the map.`, sender: 'system' }]);
             continue;
           }
 
@@ -1424,7 +1424,7 @@ function App() {
               ...prev,
               {
                 text: `Now showing buildings with conditions: ${Object.keys(next).filter(key => next[key]).join(", ")}.`,
-                sender: 'bot'
+                sender: 'system'
               }
             ]);
             
@@ -1455,7 +1455,7 @@ function App() {
     
       setMessages(prev => [
         ...prev,
-        { text: `Error: ${error.message || 'Could not complete request'}`, sender: 'bot' }
+        { text: `Error: ${error.message || 'Could not complete request'}`, sender: 'system' }
       ]);
     } finally {
         mapSearchAbortRef.current = null;
@@ -1747,8 +1747,8 @@ function App() {
 
           <div className="chat-messages" ref={chatMessagesRef} onScroll={handleChatScroll}>
             {messages.map((msg, index) => (
-              <div key={index} className={`chat-message-row ${msg.sender === 'user' ? 'chat-message-user' : 'chat-message-bot'}`}>
-                <span className={`${msg.sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-bot'}`}>{msg.text}</span>
+              <div key={index} className={`chat-message-row chat-message-${msg.sender}`}>
+                <span className={`chat-bubble chat-bubble-${msg.sender}`}>{msg.text}</span>
               </div>
             ))}
           </div>

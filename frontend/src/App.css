@@ -180,20 +180,30 @@
   text-align: left;
 }
 
-.chat-bubble-user {
+.chat-message-system {
+  text-align: left;
+}
+
+.chat-bubble {
   display: inline-block;
-  background: #2563eb;
-  color: #fff;
   padding: 8px;
   border-radius: 10px;
 }
 
+.chat-bubble-user {
+  background: #2563eb;
+  color: #fff;
+}
+
 .chat-bubble-bot {
-  display: inline-block;
   background: #f1f1f1;
   color: #111111;
-  padding: 8px;
-  border-radius: 10px;
+}
+
+.chat-bubble-system {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
+  font-style: italic;
 }
 
 .chat-input-row {
