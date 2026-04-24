@@ -1044,6 +1044,8 @@ function App() {
     unknown: true
   });
   const [messages, setMessages] = useState([]);
+  const chatMessagesRef = useRef(null);
+  const userWasAtBottomRef = useRef(true);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPolygon, setSelectedPolygon] = useState(null);
@@ -1462,6 +1464,24 @@ function App() {
     }
   };
 
+  const handleChatScroll = () => {
+    const el = chatMessagesRef.current;
+    if (!el) return;
+
+    const threshold = 50;
+    userWasAtBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+  }
+
+  // Automatically scrolls down if there is a new chat message and user is already near bottom of chat sidebar
+  useEffect(() => {
+    const el = chatMessagesRef.current;
+    if (!el) return;
+
+    if (userWasAtBottomRef.current) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [messages]);
+
   const imageTransformsById = useMemo(() => {
     return imageTransforms || {};
   }, [imageTransforms]);
@@ -1725,7 +1745,7 @@ function App() {
             Hide
           </button>
 
-          <div className="chat-messages">
+          <div className="chat-messages" ref={chatMessagesRef} onScroll={handleChatScroll}>
             {messages.map((msg, index) => (
               <div key={index} className={`chat-message-row ${msg.sender === 'user' ? 'chat-message-user' : 'chat-message-bot'}`}>
                 <span className={`${msg.sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-bot'}`}>{msg.text}</span>
