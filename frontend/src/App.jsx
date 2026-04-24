@@ -993,6 +993,48 @@ function SocalFireOverlays({ imageType, imageTransforms, availableImageSet, tile
   });
 }
 
+// Finds hidden block in text and returns cleaned text and sections of hidden block
+function parseHiddenBlock(text) {
+  // Get hidden block match
+  const blockMatch = text.match(/```([\s\S]*?)```/);
+
+  // If there isn't a hidden block, text is already clean
+  if (!blockMatch) {
+    return { cleanText: text, hiddenBlockSections: {} };
+  }
+
+  
+  // Get hidden block and clean text
+  const block = blockMatch[1];
+  const cleanText = text.replace(blockMatch[0], '').trim();
+
+  // Get individual lines of hidden block
+  const lines = block.split('\n').map(l => l.trim());
+
+  // Sections of hidden block
+  const hiddenBlockSections = {};
+  
+  let currentSection = null;
+  lines.forEach(line => {
+    // If line is empty, skip
+    if (!line) return;
+
+    // If line is section header (ALL CAPS), denote new hidden block section
+    if (/^[A-Z_]+$/.test(line)) {
+      currentSection = line;
+      hiddenBlockSections[currentSection] = [];
+      return;
+    }
+
+    // Push lines in hidden block to proper section
+    if (currentSection) {
+      hiddenBlockSections[currentSection].push(line);
+    }
+  });
+
+  return { cleanText, hiddenBlockSections };
+}
+
 function App() {
   const [conditionVisible, setConditionVisible] = useState({
     no_damage: true,
@@ -1303,56 +1345,6 @@ function App() {
       setIsLoading(true);
 
       try {
-        const query = parseQuery(submittedText);
-        if (query.type === QUERY_TYPES.LOCATION && query.value) {
-          if (mapSearchAbortRef.current) {
-            mapSearchAbortRef.current.abort();
-          }
-
-          const abortController = new AbortController();
-          mapSearchAbortRef.current = abortController;
-
-          const searchResult = await geocodeLocationQuery(query.value, mapBounds, abortController.signal);
-          if (searchResult) {
-            setMapSearchTarget({
-              ...searchResult,
-              requestedQuery: query.value,
-              searchedAt: Date.now()
-            });
-            setMessages(prev => [...prev, { text: `Moved map to ${searchResult.label}.`, sender: 'bot' }]);
-            return;
-          }
-
-          setMessages(prev => [...prev, { text: `I couldn't find "${query.value}" on the map.`, sender: 'bot' }]);
-          return;
-        }
-        else if (query.type === QUERY_TYPES.FILTER && query.value) {
-          const queryWords = String(query.value || '')
-              .split(/\s+/)
-              .filter(Boolean);
-
-          const selectedConditions = new Set(
-            queryWords.filter((w) => Object.prototype.hasOwnProperty.call(conditionVisible, w))
-          );
-
-          const next = {};
-          Object.keys(conditionVisible).forEach((k) => {
-            next[k] = selectedConditions.has(k);
-          });
-          
-          setConditionVisible(next);
-
-          setMessages(prev => [
-            ...prev,
-            {
-              text: `Now showing buildings with conditions: ${Object.keys(next).filter(key => next[key]).join(", ")}.`,
-              sender: 'bot'
-            }
-          ]);
-          
-          return;
-        }
-
         const res = await fetch(`${API_BASE_URL}/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1378,7 +1370,66 @@ function App() {
           throw new Error('Missing "response" field from backend');
         }
         
-        setMessages(prev => [...prev, { text: data.response, sender: 'bot' }]);
+        // Extract clean text and hidden block sections from chatbot message
+        const { cleanText, hiddenBlockSections } = parseHiddenBlock(data.response);
+        
+        setMessages(prev => [...prev, { text: cleanText, sender: 'bot' }]);
+        
+        // Process queries from hidden block
+        for (const q of (hiddenBlockSections.QUERIES || [])) {
+          const query = parseQuery(q);
+
+          if (query.type === QUERY_TYPES.LOCATION && query.value) {
+            if (mapSearchAbortRef.current) {
+              mapSearchAbortRef.current.abort();
+            }
+
+            const abortController = new AbortController();
+            mapSearchAbortRef.current = abortController;
+
+            const searchResult = await geocodeLocationQuery(query.value, mapBounds, abortController.signal);
+            if (searchResult) {
+              setMapSearchTarget({
+                ...searchResult,
+                requestedQuery: query.value,
+                searchedAt: Date.now()
+              });
+              setMessages(prev => [...prev, { text: `Moved map to ${searchResult.label}.`, sender: 'bot' }]);
+              continue;
+            }
+
+            setMessages(prev => [...prev, { text: `I couldn't find "${query.value}" on the map.`, sender: 'bot' }]);
+            continue;
+          }
+
+          if (query.type === QUERY_TYPES.FILTER && query.value) {
+            const queryWords = String(query.value || '')
+                .split(/\s+/)
+                .filter(Boolean);
+
+            const selectedConditions = new Set(
+              queryWords.filter((w) => Object.prototype.hasOwnProperty.call(conditionVisible, w))
+            );
+
+            const next = {};
+            Object.keys(conditionVisible).forEach((k) => {
+              next[k] = selectedConditions.has(k);
+            });
+            
+            setConditionVisible(next);
+
+            setMessages(prev => [
+              ...prev,
+              {
+                text: `Now showing buildings with conditions: ${Object.keys(next).filter(key => next[key]).join(", ")}.`,
+                sender: 'bot'
+              }
+            ]);
+            
+            continue;
+          }
+        };
+
         // const res = await fetch(`${API_BASE_URL}/chat`, {
         //   method: 'POST',
         //   headers: { 'Content-Type': 'application/json' },
