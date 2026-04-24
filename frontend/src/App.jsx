@@ -1587,7 +1587,7 @@ function App() {
       <div className="dashboard-content">
         <header className="dashboard-header">
           <h1>Damage Assessment Dashboard</h1>
-          <p>Southern California Fire</p>
+          <p>Southern California Wildfire</p>
         </header>
 
         <div className="dashboard-main">
@@ -1760,16 +1760,12 @@ function App() {
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
               className="chat-input"
-              placeholder="Type /go 123 Main St or ask a question..."
+              placeholder="Ask a question..."
               disabled={isLoading}
             />
             <button className="chat-panel-button" onClick={sendMessage} disabled={isLoading}>
               {isLoading ? 'Sending...' : 'Send'}
             </button>
-          </div>
-
-          <div className="chat-console-hint">
-            Use <strong>/go</strong> plus a street or house address to move the map.
           </div>
         </div>
       )}
