@@ -1350,7 +1350,14 @@ function App() {
         const res = await fetch(`${API_BASE_URL}/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: submittedText }),
+          // body: JSON.stringify({ message: submittedText }),
+          body: JSON.stringify({
+            message: submittedText,
+            history: messages.map((msg) => ({
+              role: msg.sender === 'user' ? 'user' : 'assistant',
+              content: msg.text,
+            })),
+          }),
         });
         
         const rawText = await res.text();

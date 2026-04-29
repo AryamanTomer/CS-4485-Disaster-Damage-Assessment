@@ -21,9 +21,13 @@ client = OpenAI(api_key=settings.openai_api_key)
 CLASSES = ["no-damage", "minor-damage", "major-damage", "destroyed", "un-classified"]
 
 
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
 class ChatRequest(BaseModel):
     message: str
-
+    history: list[ChatMessage] = []
 
 def _metadata_path() -> Path:
     p = get_settings().predictions_metadata_path
@@ -202,7 +206,9 @@ def chat(body: ChatRequest):
     context = f"""
 You are an AI assistant for a wildfire damage assessment dashboard.
 
-Use only the dataset facts below from evaluation/predictions_with_metadata.json.
+Use the dataset facts below for prediction, metric, and damage-count questions.
+
+For general disaster-related questions such as FEMA definitions, wildfire spread, or named disasters like the Woolsey Fire, you may answer using general disaster knowledge and FEMA-style definitions.
 
 Dataset facts:
 - Total images in predictions metadata export: {total}
@@ -275,12 +281,23 @@ When answering:
 
 """
 
+    conversation_messages = [{"role": "system", "content": context}]
+
+    for msg in body.history[-10:]:
+        if msg.role in {"user", "assistant"}:
+            conversation_messages.append({
+                "role": msg.role,
+                "content": msg.content
+            })
+
+    conversation_messages.append({
+        "role": "user",
+        "content": message
+    })
+
     response = client.chat.completions.create(
         model="gpt-4o",
-        messages=[
-            {"role": "system", "content": context},
-            {"role": "user", "content": message},
-        ],
+        messages=conversation_messages,
         temperature=0.3,
     )
 
