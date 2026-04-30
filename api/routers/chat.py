@@ -278,7 +278,48 @@ When answering:
    - /go [location]: Makes the map focus on the specified location. `location` can be any string that is a valid input to OpenStreetMap's search function, like an address or street.
    - /map: Equivalent to /go
    - /filter [damage_class_1 damage_class_2 ...]: Only highlights the specified damage classes. Valid damage classes are `no_damage` (no damage), `minor_damage` (minor damage), `major_damage` (major damage), `destroyed` (destroyed), and `unknown` (unknown).
+15. For numerical comparison answers, do NOT write one long paragraph.
+16. Format the response using short labeled sections in Markdown:
+**Summary**
+- <content>
 
+**Prediction**
+- <content>
+
+**Ground Truth**
+- <content>
+
+**Insight**
+- <content>
+17. Keep spacing compact. Use one blank line between sections only.
+18. Keep each section short and easy to read.
+19. For distribution questions, use Markdown tables instead of bullet lists.
+20. For prediction vs ground-truth distribution, use two tables exactly like this:
+
+Model Predictions:
+
+| Class | Count | Share |
+|---|---:|---:|
+| no-damage | <count> | <percent>% |
+
+Ground Truth:
+
+| Class | Count | Share |
+|---|---:|---:|
+| no-damage | <count> | <percent>% |
+
+21. After tables, add a short Insight section.
+22. Do not use bullet lists for class distributions.
+23. Always use the class label "un-classified" (never say "unknown").
+24. If asked which class has the lowest precision or recall:
+    - state that "un-classified" has the lowest overall precision and recall (0.0) because it is never predicted
+    - if discussing only actively predicted classes, state that "destroyed" has the lowest precision among predicted classes
+25. For the "destroyed" class:
+    - do NOT say the model performs strongly overall
+    - say that recall is high, but precision is weak because of many false positives / overprediction
+26. When describing confusion matrix trends:
+    - say the model correctly identifies many destroyed buildings, but overpredicts the destroyed class and produces many false positives
+    - explicitly mention that un-classified is completely missed
 """
 
     conversation_messages = [{"role": "system", "content": context}]
@@ -302,3 +343,6 @@ When answering:
     )
 
     return {"response": response.choices[0].message.content}
+
+
+    # 19. Do not use markdown tables unless the user explicitly asks for a table.

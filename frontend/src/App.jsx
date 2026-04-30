@@ -5,6 +5,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
 import { API_BASE_URL } from './apiConfig.js';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const IMAGE_WIDTH_PX = 1024;
 const IMAGE_HEIGHT_PX = 1024;
@@ -1752,10 +1754,21 @@ function App() {
             Hide
           </button>
 
-          <div className="chat-messages" ref={chatMessagesRef} onScroll={handleChatScroll}>
+          {/* <div className="chat-messages" ref={chatMessagesRef} onScroll={handleChatScroll}>
             {messages.map((msg, index) => (
               <div key={index} className={`chat-message-row chat-message-${msg.sender}`}>
                 <span className={`chat-bubble chat-bubble-${msg.sender}`}>{msg.text}</span>
+              </div>
+            ))}
+          </div> */}
+          <div className="chat-messages" ref={chatMessagesRef} onScroll={handleChatScroll}>
+            {messages.map((msg, index) => (
+              <div key={index} className={`chat-message-row chat-message-${msg.sender}`}>
+                <div className={`chat-bubble chat-bubble-${msg.sender}`}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {msg.text}
+                  </ReactMarkdown>
+                </div>
               </div>
             ))}
           </div>
