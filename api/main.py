@@ -6,6 +6,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from api.config import get_settings
+from api.routers.evaluation import router as evaluation_router
 from api.routers.health import router as health_router
 from api.routers.predictions import router as predictions_router
 from api.routers.chat import router as chat_router
@@ -30,6 +31,7 @@ app.include_router(health_router)
 app.include_router(predictions_router)
 app.include_router(chat_router)
 app.include_router(vlm_router)
+app.include_router(evaluation_router)
 
 
 @app.exception_handler(Exception)

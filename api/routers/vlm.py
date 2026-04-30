@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import csv
+import io
 import re
+import tempfile
 from pathlib import Path
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from openai import APIConnectionError, APIStatusError, APITimeoutError, AuthenticationError, RateLimitError
+from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
 from api.config import get_settings
@@ -39,6 +42,13 @@ class VLMPredictResponse(BaseModel):
     resnet_label: str | None = None
 
 
+class VLMUploadPredictResponse(BaseModel):
+    mode: str
+    label: str
+    pre_filename: str
+    post_filename: str
+
+
 def _resolve_paths(post_name: str) -> tuple[Path, Path, Path]:
     post_name = post_name.strip()
     if not _SAFE_NAME.match(post_name):
@@ -62,6 +72,37 @@ def _resolve_paths(post_name: str) -> tuple[Path, Path, Path]:
         raise HTTPException(status_code=404, detail=f"Pre image not found: {pre_name}")
 
     return pre_path, post_path, label_path
+
+
+def _validate_upload_image(file: UploadFile, field_name: str) -> None:
+    name = (file.filename or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail=f"{field_name} is missing a filename.")
+
+    lowered = name.lower()
+    if not lowered.endswith((".png", ".jpg", ".jpeg", ".webp")):
+        raise HTTPException(
+            status_code=400,
+            detail=f"{field_name} must be an image file (.png, .jpg, .jpeg, .webp).",
+        )
+    if file.content_type and not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail=f"{field_name} must have an image/* content type.")
+
+
+async def _read_validated_image_bytes(file: UploadFile, field_name: str) -> bytes:
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail=f"{field_name} is empty.")
+    if len(data) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail=f"{field_name} exceeds 20MB limit.")
+
+    try:
+        img = Image.open(io.BytesIO(data))
+        img.verify()
+    except (UnidentifiedImageError, OSError) as exc:
+        raise HTTPException(status_code=400, detail=f"{field_name} is not a valid image.") from exc
+
+    return data
 
 
 @router.get("/vlm/predict")
@@ -146,3 +187,82 @@ def vlm_predict(body: VLMPredictRequest) -> VLMPredictResponse:
         label=label,
         resnet_label=resnet,
     )
+
+
+@router.post("/vlm/upload-predict", response_model=VLMUploadPredictResponse)
+async def vlm_upload_predict(
+    pre_image: UploadFile = File(...),
+    post_image: UploadFile = File(...),
+    mode: Literal["full", "crops"] = Form(default="full"),
+) -> VLMUploadPredictResponse:
+    settings = get_settings()
+    if not (settings.openai_api_key or "").strip():
+        raise HTTPException(
+            status_code=503,
+            detail="OPENAI_API_KEY is not set. Add it to the project root .env file.",
+        )
+
+    _validate_upload_image(pre_image, "pre_image")
+    _validate_upload_image(post_image, "post_image")
+    pre_data = await _read_validated_image_bytes(pre_image, "pre_image")
+    post_data = await _read_validated_image_bytes(post_image, "post_image")
+
+    # For ad-hoc uploads there is no label JSON, so crops mode falls back to full.
+    effective_mode = "full" if mode == "crops" else mode
+
+    pre_suffix = Path(pre_image.filename or "pre.png").suffix or ".png"
+    post_suffix = Path(post_image.filename or "post.png").suffix or ".png"
+
+    pre_tmp_path: Path | None = None
+    post_tmp_path: Path | None = None
+
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=pre_suffix) as pre_tmp:
+            pre_tmp_path = Path(pre_tmp.name)
+            pre_tmp.write(pre_data)
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=post_suffix) as post_tmp:
+            post_tmp_path = Path(post_tmp.name)
+            post_tmp.write(post_data)
+
+        from backend.vlm_pipeline import assess_damage
+
+        try:
+            label = assess_damage(pre_tmp_path, post_tmp_path)
+        except RateLimitError as exc:
+            raise HTTPException(
+                status_code=429,
+                detail=(
+                    "OpenAI rate limit or quota exceeded (check billing and plan at "
+                    "https://platform.openai.com/account/billing)."
+                ),
+            ) from exc
+        except AuthenticationError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="OpenAI rejected the API key. Verify OPENAI_API_KEY in the project root .env file.",
+            ) from exc
+        except APIStatusError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail=f"OpenAI API error ({exc.status_code}).",
+            ) from exc
+        except (APIConnectionError, APITimeoutError) as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=f"Could not reach OpenAI: {exc!s}",
+            ) from exc
+
+        return VLMUploadPredictResponse(
+            mode=effective_mode,
+            label=label,
+            pre_filename=pre_image.filename or "uploaded_pre_image",
+            post_filename=post_image.filename or "uploaded_post_image",
+        )
+    finally:
+        await pre_image.close()
+        await post_image.close()
+        if pre_tmp_path and pre_tmp_path.exists():
+            pre_tmp_path.unlink(missing_ok=True)
+        if post_tmp_path and post_tmp_path.exists():
+            post_tmp_path.unlink(missing_ok=True)

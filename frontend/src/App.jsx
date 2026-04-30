@@ -1066,6 +1066,16 @@ function App() {
   const [vlmLoading, setVlmLoading] = useState(false);
   const [vlmError, setVlmError] = useState(null);
   const [vlmResult, setVlmResult] = useState(null);
+  const [activeView, setActiveView] = useState('map');
+  const [evaluationLoading, setEvaluationLoading] = useState(false);
+  const [evaluationError, setEvaluationError] = useState(null);
+  const [evaluationData, setEvaluationData] = useState(null);
+  const [uploadPreFile, setUploadPreFile] = useState(null);
+  const [uploadPostFile, setUploadPostFile] = useState(null);
+  const [uploadMode, setUploadMode] = useState('full');
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  const [uploadResult, setUploadResult] = useState(null);
 
   useEffect(() => {
     const loadAvailableImages = async () => {
@@ -1122,6 +1132,33 @@ function App() {
     }
   }, [vlmPostOptions, vlmPostName]);
 
+  useEffect(() => {
+    if (activeView !== 'evaluation' || evaluationData) {
+      return;
+    }
+
+    const loadEvaluationMetrics = async () => {
+      setEvaluationLoading(true);
+      setEvaluationError(null);
+      try {
+        const res = await fetch(`${API_BASE_URL}/evaluation/metrics`);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const detail = data.detail;
+          const msg = typeof detail === 'string' ? detail : JSON.stringify(detail ?? data);
+          throw new Error(msg || 'Could not load evaluation metrics');
+        }
+        setEvaluationData(data);
+      } catch (err) {
+        setEvaluationError(err.message || String(err));
+      } finally {
+        setEvaluationLoading(false);
+      }
+    };
+
+    loadEvaluationMetrics();
+  }, [activeView, evaluationData]);
+
   const runVlm = async () => {
     if (!vlmPostName) {
       return;
@@ -1146,6 +1183,42 @@ function App() {
       setVlmError(err.message || String(err));
     } finally {
       setVlmLoading(false);
+    }
+  };
+
+  const runUploadVlm = async () => {
+    if (!uploadPreFile || !uploadPostFile) {
+      setUploadError('Please upload both pre-disaster and post-disaster images.');
+      return;
+    }
+
+    setUploadLoading(true);
+    setUploadError(null);
+    setUploadResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('pre_image', uploadPreFile);
+      formData.append('post_image', uploadPostFile);
+      formData.append('mode', uploadMode);
+
+      const res = await fetch(`${API_BASE_URL}/vlm/upload-predict`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const detail = data.detail;
+        const msg = typeof detail === 'string' ? detail : JSON.stringify(detail ?? data);
+        throw new Error(msg || 'Upload VLM request failed');
+      }
+
+      setUploadResult(data);
+    } catch (err) {
+      setUploadError(err.message || String(err));
+    } finally {
+      setUploadLoading(false);
     }
   };
 
@@ -1612,134 +1685,311 @@ function App() {
           )}
 
           <div className="map-panel">
-            <div className="map-stage">
-              <MapContainer
-                center={[34.5, -119.6]}
-                zoom={12}
-                maxZoom={19}
-                maxNativeZoom={19}
-                style={{ flex: 1, width: '100%', border: 'none' }}
+            <div className="app-view-switch" role="tablist" aria-label="Application views">
+              <button
+                type="button"
+                className={`app-view-button ${activeView === 'map' ? 'active' : ''}`}
+                onClick={() => setActiveView('map')}
               >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; OpenStreetMap contributors'
-                  maxZoom={19}
-                  maxNativeZoom={19}
-                />
-                <MapBoundsController bounds={mapBounds} />
-                <MapResizeController chatOpen={isChatOpen} />
-                <MapSearchController target={mapSearchTarget} />
-                <SocalFireOverlays
-                  imageType={imageType}
-                  imageTransforms={imageTransforms}
-                  availableImageSet={availableImageSet}
-                  tilePredictions={tilePredictions}
-                />
-                <LabelPolygonOverlays
-                  polygons={labelPolygons}
-                  imageType={imageType}
-                  conditionVisible={conditionVisible}
-                />
-                <HouseConditionOverlays
-                  houses={houseObservations}
-                  imageTransformsById={imageTransformsById}
-                  imageType={imageType}
-                  conditionVisible={conditionVisible}
-                />
-                {mapSearchTarget && (
-                  <CircleMarker
-                    center={[mapSearchTarget.lat, mapSearchTarget.lng]}
-                    radius={8}
-                    fillColor="#7ce0ff"
-                    color="#08131d"
-                    weight={2}
-                    opacity={1}
-                    fillOpacity={0.95}
-                  >
-                    <Tooltip direction="top" offset={[0, -8]}>
-                      {mapSearchTarget.label}
-                    </Tooltip>
-                  </CircleMarker>
-                )}
-                <GeoJSON data={polygons} style={getPolygonStyle} onEachFeature={onEachFeature} />
-              </MapContainer>
+                Map
+              </button>
+              <button
+                type="button"
+                className={`app-view-button ${activeView === 'evaluation' ? 'active' : ''}`}
+                onClick={() => setActiveView('evaluation')}
+              >
+                Evaluation
+              </button>
+              <button
+                type="button"
+                className={`app-view-button ${activeView === 'upload' ? 'active' : ''}`}
+                onClick={() => setActiveView('upload')}
+              >
+                Upload VLM
+              </button>
+            </div>
 
-              <div className="vlm-panel" role="region" aria-label="GPT-4o Vision VLM">
-                <div className="vlm-panel-title">GPT-4o Vision (VLM)</div>
-                <label className="vlm-panel-label" htmlFor="vlm-tile-select">Post tile</label>
-                <select
-                  id="vlm-tile-select"
-                  className="vlm-panel-select"
-                  value={vlmPostName}
-                  onChange={(e) => setVlmPostName(e.target.value)}
-                >
-                  {vlmPostOptions.map((f) => (
-                    <option key={f} value={f}>{f}</option>
-                  ))}
-                </select>
-                <label className="vlm-panel-label vlm-panel-row" htmlFor="vlm-mode-select">
+            {activeView === 'map' && (
+              <>
+                <div className="map-stage">
+                  <MapContainer
+                    center={[34.5, -119.6]}
+                    zoom={12}
+                    maxZoom={19}
+                    maxNativeZoom={19}
+                    style={{ flex: 1, width: '100%', border: 'none' }}
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; OpenStreetMap contributors'
+                      maxZoom={19}
+                      maxNativeZoom={19}
+                    />
+                    <MapBoundsController bounds={mapBounds} />
+                    <MapResizeController chatOpen={isChatOpen} />
+                    <MapSearchController target={mapSearchTarget} />
+                    <SocalFireOverlays
+                      imageType={imageType}
+                      imageTransforms={imageTransforms}
+                      availableImageSet={availableImageSet}
+                      tilePredictions={tilePredictions}
+                    />
+                    <LabelPolygonOverlays
+                      polygons={labelPolygons}
+                      imageType={imageType}
+                      conditionVisible={conditionVisible}
+                    />
+                    <HouseConditionOverlays
+                      houses={houseObservations}
+                      imageTransformsById={imageTransformsById}
+                      imageType={imageType}
+                      conditionVisible={conditionVisible}
+                    />
+                    {mapSearchTarget && (
+                      <CircleMarker
+                        center={[mapSearchTarget.lat, mapSearchTarget.lng]}
+                        radius={8}
+                        fillColor="#7ce0ff"
+                        color="#08131d"
+                        weight={2}
+                        opacity={1}
+                        fillOpacity={0.95}
+                      >
+                        <Tooltip direction="top" offset={[0, -8]}>
+                          {mapSearchTarget.label}
+                        </Tooltip>
+                      </CircleMarker>
+                    )}
+                    <GeoJSON data={polygons} style={getPolygonStyle} onEachFeature={onEachFeature} />
+                  </MapContainer>
+
+                  <div className="vlm-panel" role="region" aria-label="GPT-4o Vision VLM">
+                    <div className="vlm-panel-title">GPT-4o Vision (VLM)</div>
+                    <label className="vlm-panel-label" htmlFor="vlm-tile-select">Post tile</label>
+                    <select
+                      id="vlm-tile-select"
+                      className="vlm-panel-select"
+                      value={vlmPostName}
+                      onChange={(e) => setVlmPostName(e.target.value)}
+                    >
+                      {vlmPostOptions.map((f) => (
+                        <option key={f} value={f}>{f}</option>
+                      ))}
+                    </select>
+                    <label className="vlm-panel-label vlm-panel-row" htmlFor="vlm-mode-select">
+                      <span>Mode</span>
+                      <select
+                        id="vlm-mode-select"
+                        className="vlm-panel-select vlm-panel-select--narrow"
+                        value={vlmMode}
+                        onChange={(e) => setVlmMode(e.target.value)}
+                      >
+                        <option value="crops">Building crops (labels)</option>
+                        <option value="full">Full tile images</option>
+                      </select>
+                    </label>
+                    <button type="button" className="vlm-panel-button" onClick={runVlm} disabled={vlmLoading || !vlmPostName}>
+                      {vlmLoading ? 'Running…' : 'Run VLM'}
+                    </button>
+                    {vlmError && <p className="vlm-panel-error">{vlmError}</p>}
+                    {vlmResult && (
+                      <div className="vlm-panel-result">
+                        <div><strong>VLM:</strong> {vlmResult.label}</div>
+                        {vlmResult.resnet_label ? (
+                          <div><strong>ResNet (batch):</strong> {vlmResult.resnet_label}</div>
+                        ) : null}
+                        <div className="vlm-panel-meta">mode: {vlmResult.mode}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="damage-legend-overlay" role="note" aria-label="Damage class legend">
+                    {damageLegendItems.map((item) => (
+                      <div key={item.key} className="damage-legend-item">
+                        <span
+                          style={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            backgroundColor: conditionToColor(item.key),
+                            border: '1px solid rgba(255, 255, 255, 0.8)'
+                          }}
+                        />
+                        {item.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="phase-switch-bar">
+                  <div className="phase-switch" role="group" aria-label="Switch between pre and post disaster imagery">
+                    <button
+                      type="button"
+                      className={`phase-switch-option ${imageType === 'pre' ? 'active' : ''}`}
+                      onClick={() => setImageType('pre')}
+                    >
+                      Before
+                    </button>
+                    <button
+                      type="button"
+                      className={`phase-switch-option ${imageType === 'post' ? 'active' : ''}`}
+                      onClick={() => setImageType('post')}
+                    >
+                      After
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {activeView === 'evaluation' && (
+              <div className="evaluation-panel">
+                <h2>Model Evaluation</h2>
+                {evaluationLoading && <p>Loading evaluation metrics...</p>}
+                {evaluationError && <p className="vlm-panel-error">{evaluationError}</p>}
+                {evaluationData && !evaluationLoading && (
+                  <>
+                    <div className="evaluation-summary-grid">
+                      <div className="evaluation-summary-card">
+                        <div className="evaluation-summary-label">Accuracy</div>
+                        <div className="evaluation-summary-value">
+                          {(Number(evaluationData.summary?.accuracy || 0) * 100).toFixed(2)}%
+                        </div>
+                      </div>
+                      <div className="evaluation-summary-card">
+                        <div className="evaluation-summary-label">Evaluated</div>
+                        <div className="evaluation-summary-value">{evaluationData.summary?.evaluated_rows ?? 0}</div>
+                      </div>
+                      <div className="evaluation-summary-card">
+                        <div className="evaluation-summary-label">Total rows</div>
+                        <div className="evaluation-summary-value">{evaluationData.summary?.total_rows ?? 0}</div>
+                      </div>
+                    </div>
+
+                    <div className="evaluation-meta">
+                      Source: {evaluationData.source_csv}
+                      {' | '}
+                      Excluded: unclassified={evaluationData.summary?.excluded?.unclassified_ground_truth ?? 0}, unclear={evaluationData.summary?.excluded?.unclear_prediction ?? 0}, invalid={evaluationData.summary?.excluded?.invalid_format ?? 0}
+                    </div>
+
+                    <h3>Confusion Matrix</h3>
+                    <div className="evaluation-table-wrap">
+                      <table className="evaluation-table">
+                        <thead>
+                          <tr>
+                            <th>Ground Truth \\ Pred</th>
+                            {(evaluationData.labels || []).map((label) => (
+                              <th key={`cm-h-${label}`}>{label}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(evaluationData.confusion_matrix || []).map((row, rIdx) => (
+                            <tr key={`cm-r-${rIdx}`}>
+                              <th>{evaluationData.labels?.[rIdx] || `row-${rIdx}`}</th>
+                              {row.map((value, cIdx) => (
+                                <td key={`cm-c-${rIdx}-${cIdx}`}>{value}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <h3>Per-class Metrics</h3>
+                    <div className="evaluation-table-wrap">
+                      <table className="evaluation-table">
+                        <thead>
+                          <tr>
+                            <th>Label</th>
+                            <th>Precision</th>
+                            <th>Recall</th>
+                            <th>F1</th>
+                            <th>Support</th>
+                            <th>Predicted</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(evaluationData.per_class || []).map((row) => (
+                            <tr key={`pc-${row.label}`}>
+                              <td>{row.label}</td>
+                              <td>{row.precision}</td>
+                              <td>{row.recall}</td>
+                              <td>{row.f1}</td>
+                              <td>{row.support}</td>
+                              <td>{row.predicted_count}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {activeView === 'upload' && (
+              <div className="upload-vlm-panel">
+                <h2>Upload Pre/Post Images (VLM)</h2>
+                <p className="evaluation-meta">
+                  Upload local pre-disaster and post-disaster images to run live damage assessment.
+                </p>
+                <div className="upload-vlm-grid">
+                  <label className="vlm-panel-label" htmlFor="upload-pre-image">
+                    Pre-disaster image
+                    <input
+                      id="upload-pre-image"
+                      className="upload-vlm-input"
+                      type="file"
+                      accept=".png,.jpg,.jpeg,.webp,image/*"
+                      onChange={(e) => setUploadPreFile(e.target.files?.[0] || null)}
+                    />
+                  </label>
+                  <label className="vlm-panel-label" htmlFor="upload-post-image">
+                    Post-disaster image
+                    <input
+                      id="upload-post-image"
+                      className="upload-vlm-input"
+                      type="file"
+                      accept=".png,.jpg,.jpeg,.webp,image/*"
+                      onChange={(e) => setUploadPostFile(e.target.files?.[0] || null)}
+                    />
+                  </label>
+                </div>
+
+                <label className="vlm-panel-label vlm-panel-row" htmlFor="upload-mode-select">
                   <span>Mode</span>
                   <select
-                    id="vlm-mode-select"
+                    id="upload-mode-select"
                     className="vlm-panel-select vlm-panel-select--narrow"
-                    value={vlmMode}
-                    onChange={(e) => setVlmMode(e.target.value)}
+                    value={uploadMode}
+                    onChange={(e) => setUploadMode(e.target.value)}
                   >
-                    <option value="crops">Building crops (labels)</option>
-                    <option value="full">Full tile images</option>
+                    <option value="full">Full image pair</option>
+                    <option value="crops">Crops (falls back to full for uploads)</option>
                   </select>
                 </label>
-                <button type="button" className="vlm-panel-button" onClick={runVlm} disabled={vlmLoading || !vlmPostName}>
-                  {vlmLoading ? 'Running…' : 'Run VLM'}
+
+                <button
+                  type="button"
+                  className="vlm-panel-button upload-vlm-button"
+                  onClick={runUploadVlm}
+                  disabled={uploadLoading || !uploadPreFile || !uploadPostFile}
+                >
+                  {uploadLoading ? 'Running…' : 'Run Upload VLM'}
                 </button>
-                {vlmError && <p className="vlm-panel-error">{vlmError}</p>}
-                {vlmResult && (
+
+                {uploadError && <p className="vlm-panel-error">{uploadError}</p>}
+                {uploadResult && (
                   <div className="vlm-panel-result">
-                    <div><strong>VLM:</strong> {vlmResult.label}</div>
-                    {vlmResult.resnet_label ? (
-                      <div><strong>ResNet (batch):</strong> {vlmResult.resnet_label}</div>
-                    ) : null}
-                    <div className="vlm-panel-meta">mode: {vlmResult.mode}</div>
+                    <div><strong>Prediction:</strong> {uploadResult.label}</div>
+                    <div className="vlm-panel-meta">
+                      mode: {uploadResult.mode} | pre: {uploadResult.pre_filename} | post: {uploadResult.post_filename}
+                    </div>
                   </div>
                 )}
               </div>
-
-              <div className="damage-legend-overlay" role="note" aria-label="Damage class legend">
-                {damageLegendItems.map((item) => (
-                  <div key={item.key} className="damage-legend-item">
-                    <span
-                      style={{
-                        width: '12px',
-                        height: '12px',
-                        borderRadius: '50%',
-                        backgroundColor: conditionToColor(item.key),
-                        border: '1px solid rgba(255, 255, 255, 0.8)'
-                      }}
-                    />
-                    {item.label}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="phase-switch-bar">
-              <div className="phase-switch" role="group" aria-label="Switch between pre and post disaster imagery">
-                <button
-                  type="button"
-                  className={`phase-switch-option ${imageType === 'pre' ? 'active' : ''}`}
-                  onClick={() => setImageType('pre')}
-                >
-                  Before
-                </button>
-                <button
-                  type="button"
-                  className={`phase-switch-option ${imageType === 'post' ? 'active' : ''}`}
-                  onClick={() => setImageType('post')}
-                >
-                  After
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
