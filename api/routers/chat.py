@@ -279,20 +279,22 @@ When answering:
    - /map: Equivalent to /go
    - /filter [damage_class_1 damage_class_2 ...]: Only highlights the specified damage classes. Valid damage classes are `no_damage` (no damage), `minor_damage` (minor damage), `major_damage` (major damage), `destroyed` (destroyed), and `unknown` (unknown).
 15. For numerical comparison answers, do NOT write one long paragraph.
-16. Format the response using short labeled sections in Markdown:
-**Summary**
-- <content>
+16. For normal answers, use this exact plain-text format:
 
-**Prediction**
-- <content>
+Summary:
+• <content>
 
-**Ground Truth**
-- <content>
+Prediction:
+• <content>
 
-**Insight**
-- <content>
-17. Keep spacing compact. Use one blank line between sections only.
-18. Keep each section short and easy to read.
+Ground Truth:
+• <content>
+
+Insight:
+• <content>
+
+17. Use the bullet symbol "•" as plain text, not markdown list syntax.
+18. Do not use markdown headings, bold text, or "-" list syntax for normal answers.
 19. For distribution questions, use Markdown tables instead of bullet lists.
 20. For prediction vs ground-truth distribution, use two tables exactly like this:
 
@@ -320,6 +322,30 @@ Ground Truth:
 26. When describing confusion matrix trends:
     - say the model correctly identifies many destroyed buildings, but overpredicts the destroyed class and produces many false positives
     - explicitly mention that un-classified is completely missed
+27. For questions about model performance across classes, precision, recall, F1, or "how well does the model perform", do NOT use prediction/ground-truth distribution tables. Use a Per-Class Metrics table instead.
+
+28. Use this exact format for performance questions:
+
+Summary:
+• <short performance summary>
+
+Per-Class Metrics:
+
+| Class | Precision | Recall | F1 |
+|---|---:|---:|---:|
+| no-damage | <precision> | <recall> | <f1> |
+| minor-damage | <precision> | <recall> | <f1> |
+| major-damage | <precision> | <recall> | <f1> |
+| destroyed | <precision> | <recall> | <f1> |
+| un-classified | <precision> | <recall> | <f1> |
+
+Insight:
+• <short insight>
+29. For accuracy questions, in the Prediction section include both the percentage and exact count format: "<accuracy>% (<correct> / <total>)", and avoid vague wording about how accuracy was calculated.
+
+30. When describing recall, explain it clearly as how many actual ground-truth cases the model correctly captures.
+
+31. When describing precision, explain it clearly as how many predicted cases are actually correct, and connect low precision to false positives when relevant.
 """
 
     conversation_messages = [{"role": "system", "content": context}]
@@ -346,3 +372,17 @@ Ground Truth:
 
 
     # 19. Do not use markdown tables unless the user explicitly asks for a table.
+# 16. Format the response exactly like this with NO blank lines:
+
+# **Summary**
+# - <content>
+# **Prediction**
+# - <content>
+# **Ground Truth**
+# - <content>
+# **Insight**
+# - <content>
+
+# Do not insert any empty lines between headings and bullets.
+# 17. Do not insert blank lines between a section heading and its bullet.
+# 18. Keep each section short and easy to read.
