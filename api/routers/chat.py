@@ -1,4 +1,5 @@
 ﻿from __future__ import annotations
+from api.routers.articles import WILDFIRE_ARTICLES
 
 import json
 from functools import lru_cache
@@ -249,6 +250,8 @@ Key error counts:
 - Un-classified false positives: {unclassified_fp}
 - Un-classified false negatives: {unclassified_fn}
 
+{WILDFIRE_ARTICLES}
+
 Definitions:
 - prediction = model output
 - ground_truth = labeled reference answer
@@ -280,6 +283,8 @@ When answering:
    - /filter [damage_class_1 damage_class_2 ...]: Only highlights the specified damage classes. Valid damage classes are `no_damage` (no damage), `minor_damage` (minor damage), `major_damage` (major damage), `destroyed` (destroyed), and `unknown` (unknown).
 15. For numerical comparison answers, do NOT write one long paragraph.
 16. For normal answers, use this exact plain-text format:
+
+
 
 Summary:
 • <content>
