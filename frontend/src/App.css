@@ -112,6 +112,115 @@
   font-size: 13px;
 }
 
+.damage-chart-trigger {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 1005;
+  width: 60px;
+  height: 60px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: rgba(8, 16, 25, 0.86);
+  color: #e9f7ff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.42);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.damage-chart-trigger:hover {
+  transform: translateY(-1px) scale(1.03);
+  background: rgba(11, 22, 34, 0.92);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.46);
+}
+
+.damage-chart-trigger:focus,
+.damage-chart-trigger:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(124, 224, 255, 0.45), 0 8px 20px rgba(0, 0, 0, 0.46);
+}
+
+.damage-chart-trigger svg {
+  width: 42px;
+  height: 42px;
+}
+
+.damage-chart-overlay {
+  position: absolute;
+  right: 14px;
+  bottom: 70px;
+  z-index: 1006;
+  width: 240px;
+  padding: 10px 12px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 12px;
+  background: rgba(8, 16, 25, 0.86);
+  backdrop-filter: blur(4px);
+  color: #f4f8fb;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+}
+
+.damage-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.damage-chart-close {
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f4f8fb;
+  border-radius: 6px;
+  padding: 1px 8px 2px;
+  cursor: pointer;
+}
+
+.damage-chart-total {
+  margin-top: 4px;
+  text-align: left;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.damage-chart-svg {
+  width: 168px;
+  height: 168px;
+  display: block;
+  margin: 8px auto 10px;
+}
+
+.damage-chart-legend {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.damage-chart-legend-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.damage-chart-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.damage-chart-count {
+  font-weight: 700;
+  min-width: 1.5rem;
+  text-align: right;
+}
+
 .chat-sidebar {
   position: relative;
   flex: 0.5;
@@ -459,6 +568,17 @@
     right: auto;
     bottom: 12px;
     left: 12px;
+  }
+
+  .damage-chart-overlay {
+    right: 12px;
+    bottom: 66px;
+    width: min(240px, calc(100% - 24px));
+  }
+
+  .damage-chart-trigger {
+    right: 12px;
+    bottom: 12px;
   }
 }
 

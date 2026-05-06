@@ -66,6 +66,61 @@ function conditionToColor(condition) {
   return CONDITION_COLORS[normalizeCondition(condition)] || CONDITION_COLORS.unknown;
 }
 
+function isWithinViewport(viewport, lat, lng) {
+  if (!viewport || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return false;
+  }
+
+  return (
+    lat >= viewport.south &&
+    lat <= viewport.north &&
+    lng >= viewport.west &&
+    lng <= viewport.east
+  );
+}
+
+function buildDamageSummaryFromVisiblePolygons(polygons, viewport, imageType, conditionVisible) {
+  const counts = {
+    no_damage: 0,
+    minor_damage: 0,
+    major_damage: 0,
+    destroyed: 0,
+    unknown: 0
+  };
+
+  if (!viewport || !Array.isArray(polygons) || polygons.length === 0) {
+    return { counts, total: 0 };
+  }
+
+  const suffix = imageType === 'pre' ? '_pre_disaster.png' : '_post_disaster.png';
+
+  polygons.forEach((polygon) => {
+    if (!polygon?.imageId || !String(polygon.imageId).endsWith(suffix)) {
+      return;
+    }
+
+    const condition = normalizeCondition(polygon.condition);
+    if (!conditionVisible?.[condition]) {
+      return;
+    }
+
+    if (!Array.isArray(polygon.boundary) || polygon.boundary.length < 3) {
+      return;
+    }
+
+    const boundary = L.latLngBounds(polygon.boundary);
+    const center = boundary.getCenter();
+    if (!isWithinViewport(viewport, center.lat, center.lng)) {
+      return;
+    }
+
+    counts[condition] = (counts[condition] || 0) + 1;
+  });
+
+  const total = Object.values(counts).reduce((sum, value) => sum + value, 0);
+  return { counts, total };
+}
+
 function looksLikeLocationQuery(query) {
   if (!query) {
     return false;
@@ -770,6 +825,116 @@ function MapSearchController({ target }) {
   return null;
 }
 
+function MapViewportController({ onViewportChange }) {
+  const map = useMap();
+
+  const pushViewport = React.useCallback(() => {
+    const bounds = map.getBounds();
+    onViewportChange({
+      south: bounds.getSouth(),
+      west: bounds.getWest(),
+      north: bounds.getNorth(),
+      east: bounds.getEast(),
+      zoom: map.getZoom(),
+      updatedAt: Date.now()
+    });
+  }, [map, onViewportChange]);
+
+  useMapEvents({
+    moveend: pushViewport,
+    zoomend: pushViewport
+  });
+
+  useEffect(() => {
+    pushViewport();
+  }, [pushViewport]);
+
+  return null;
+}
+
+function describeConditionLabel(conditionKey) {
+  return conditionKey.replace(/_/g, ' ');
+}
+
+function buildPieSlicePath(cx, cy, radius, startAngle, endAngle) {
+  const startX = cx + (radius * Math.cos(startAngle));
+  const startY = cy + (radius * Math.sin(startAngle));
+  const endX = cx + (radius * Math.cos(endAngle));
+  const endY = cy + (radius * Math.sin(endAngle));
+  const largeArcFlag = endAngle - startAngle > Math.PI ? 1 : 0;
+
+  return `M ${cx} ${cy} L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
+}
+
+function DamageSummaryPie({ snapshot, onClose }) {
+  if (!snapshot) {
+    return null;
+  }
+
+  const order = ['destroyed', 'major_damage', 'minor_damage', 'no_damage', 'unknown'];
+  const total = snapshot.total || 0;
+  const sortedLegend = [...order].sort((a, b) => {
+    const delta = (snapshot.counts[b] || 0) - (snapshot.counts[a] || 0);
+    if (delta !== 0) {
+      return delta;
+    }
+
+    return order.indexOf(a) - order.indexOf(b);
+  });
+  const slices = [];
+  let angle = -Math.PI / 2;
+
+  order.forEach((key) => {
+    const value = snapshot.counts[key] || 0;
+    if (value <= 0 || total <= 0) {
+      return;
+    }
+
+    const nextAngle = angle + ((value / total) * Math.PI * 2);
+    slices.push({
+      key,
+      value,
+      color: conditionToColor(key),
+      path: buildPieSlicePath(84, 84, 64, angle, nextAngle)
+    });
+    angle = nextAngle;
+  });
+
+  return (
+    <div className="damage-chart-overlay" role="dialog" aria-label="Visible house damage chart">
+      <div className="damage-chart-header">
+        <strong>Visible Houses</strong>
+        <button type="button" className="damage-chart-close" onClick={onClose} aria-label="Close damage chart">
+          x
+        </button>
+      </div>
+
+      <div className="damage-chart-total">Total: {total}</div>
+
+      <svg className="damage-chart-svg" viewBox="0 0 168 168" aria-hidden="true">
+        {total > 0 ? (
+          slices.map((slice) => (
+            <path key={slice.key} d={slice.path} fill={slice.color} stroke="rgba(10, 15, 22, 0.9)" strokeWidth="1" />
+          ))
+        ) : (
+          <circle cx="84" cy="84" r="64" fill="rgba(255, 255, 255, 0.14)" />
+        )}
+        <circle cx="84" cy="84" r="28" fill="rgba(8, 16, 25, 0.95)" />
+      </svg>
+
+      <div className="damage-chart-legend" role="list">
+        {sortedLegend.map((key) => (
+          <div className="damage-chart-legend-item" key={key} role="listitem">
+            <span className="damage-chart-dot" style={{ backgroundColor: conditionToColor(key) }} />
+            <span>{describeConditionLabel(key)}</span>
+            <span className="damage-chart-count">{snapshot.counts[key] || 0}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function FadingImageOverlay({ image, animateOnAdd, onError }) {
   return (
     <LeafletImageOverlay
@@ -1060,6 +1225,9 @@ function App() {
   const [tilePredictions, setTilePredictions] = useState({});
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [mapSearchTarget, setMapSearchTarget] = useState(null);
+  const [mapViewport, setMapViewport] = useState(null);
+  const [damageChartSnapshot, setDamageChartSnapshot] = useState(null);
+  const [isDamageChartOpen, setIsDamageChartOpen] = useState(false);
   const mapSearchAbortRef = useRef(null);
   const [vlmPostName, setVlmPostName] = useState('');
   const [vlmMode, setVlmMode] = useState('crops');
@@ -1568,6 +1736,34 @@ function App() {
     return imageTransforms || {};
   }, [imageTransforms]);
 
+  const visibleDamageSummary = useMemo(() => {
+    return buildDamageSummaryFromVisiblePolygons(
+      labelPolygons,
+      mapViewport,
+      imageType,
+      conditionVisible
+    );
+  }, [conditionVisible, imageType, labelPolygons, mapViewport]);
+
+  const handleDamageChartClick = () => {
+    setDamageChartSnapshot({
+      ...visibleDamageSummary,
+      generatedAt: Date.now()
+    });
+    setIsDamageChartOpen(true);
+  };
+
+  useEffect(() => {
+    if (!isDamageChartOpen) {
+      return;
+    }
+
+    setDamageChartSnapshot({
+      ...visibleDamageSummary,
+      generatedAt: Date.now()
+    });
+  }, [isDamageChartOpen, visibleDamageSummary]);
+
   // Sample polygon data for demonstration
   const polygons = {
     type: 'FeatureCollection',
@@ -1728,6 +1924,7 @@ function App() {
                     <MapBoundsController bounds={mapBounds} />
                     <MapResizeController chatOpen={isChatOpen} />
                     <MapSearchController target={mapSearchTarget} />
+                    <MapViewportController onViewportChange={setMapViewport} />
                     <SocalFireOverlays
                       imageType={imageType}
                       imageTransforms={imageTransforms}
@@ -1762,6 +1959,26 @@ function App() {
                     )}
                     <GeoJSON data={polygons} style={getPolygonStyle} onEachFeature={onEachFeature} />
                   </MapContainer>
+
+                  {isDamageChartOpen && (
+                    <DamageSummaryPie
+                      snapshot={damageChartSnapshot || visibleDamageSummary}
+                      onClose={() => setIsDamageChartOpen(false)}
+                    />
+                  )}
+
+                  <button
+                    type="button"
+                    className="damage-chart-trigger"
+                    onClick={handleDamageChartClick}
+                    aria-label="Analyze visible house damage"
+                    title="Analyze visible house damage"
+                  >
+                    <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+                      <circle cx="14" cy="14" r="8.75" fill="none" stroke="currentColor" strokeWidth="3.2" />
+                      <path d="M20.5 20.5L28 28" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" />
+                    </svg>
+                  </button>
 
                   <div className="vlm-panel" role="region" aria-label="GPT-4o Vision VLM">
                     <div className="vlm-panel-title">GPT-4o Vision (VLM)</div>
