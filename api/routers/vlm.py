@@ -14,6 +14,8 @@ from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
 from api.config import get_settings
+from datetime import datetime
+from api.services.metadata_store import append_prediction_to_metadata
 
 router = APIRouter(tags=["vlm"])
 
@@ -181,6 +183,25 @@ def vlm_predict(body: VLMPredictRequest) -> VLMPredictResponse:
     except OSError:
         resnet = None
 
+    try:
+        append_prediction_to_metadata({
+            "image_name": body.post_image_name,
+            "img_name": body.post_image_name,
+            "prediction": label,
+            "ground_truth": None,
+            "latitude": None,
+            "longitude": None,
+            "geo_source": "vlm_upload",
+            "disaster": "user-upload",
+            "disaster_type": "wildfire",
+            "capture_date": datetime.now().isoformat(),
+            "sensor": "uploaded",
+            "mode": body.mode,
+            "resnet_label": resnet,
+        })
+    except Exception as e:
+        print(f"Warning: could not save VLM prediction to metadata: {e}")
+
     return VLMPredictResponse(
         post_image_name=body.post_image_name,
         mode=body.mode,
@@ -252,6 +273,26 @@ async def vlm_upload_predict(
                 status_code=503,
                 detail=f"Could not reach OpenAI: {exc!s}",
             ) from exc
+
+        try:
+            append_prediction_to_metadata({
+                "image_name": post_image.filename or "uploaded_post_image",
+                "img_name": post_image.filename or "uploaded_post_image",
+                "prediction": label,
+                "ground_truth": None,
+                "latitude": None,
+                "longitude": None,
+                "geo_source": "vlm_upload",
+                "disaster": "user-upload",
+                "disaster_type": "wildfire",
+                "capture_date": datetime.now().isoformat(),
+                "sensor": "uploaded",
+                "mode": effective_mode,
+                "pre_filename": pre_image.filename or "uploaded_pre_image",
+                "post_filename": post_image.filename or "uploaded_post_image",
+            })
+        except Exception as e:
+            print(f"Warning: could not save uploaded VLM prediction to metadata: {e}")
 
         return VLMUploadPredictResponse(
             mode=effective_mode,

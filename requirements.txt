@@ -19,3 +19,4 @@ geopy>=2.4.1
 pytest>=8.0.0
 httpx>=0.27.0
 
+pillow>=11.3.0
