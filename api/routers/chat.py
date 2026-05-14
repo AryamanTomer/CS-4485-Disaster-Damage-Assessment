@@ -205,10 +205,9 @@ def chat(body: ChatRequest):
             )
         ]
 
-    if matched_locations and filtered_df.empty:
-        filtered_df = df
-
-    if matched_locations:
+    location_filter_applied = bool(matched_locations) and not filtered_df.empty
+    
+    if location_filter_applied:
         df = filtered_df
 
     if df.empty:
@@ -231,7 +230,7 @@ def chat(body: ChatRequest):
 
     total = len(df)
 
-    location_context = "" if not matched_locations else ", ".join(sorted(matched_locations))
+    location_context = ", ".join(sorted(matched_locations)) if location_filter_applied else ""
 
     # Prediction counts
     pred_no_damage = count_label(pred_values, "no-damage")
@@ -286,6 +285,9 @@ You are an AI assistant for a wildfire damage assessment dashboard.
 
 Use the dataset facts below for prediction, metric, and damage-count questions.
 These statistics may represent either the full dataset or a location-filtered subset based on the user query.
+Items in the dataset are image tiles, each of which contains 0 or more addresses.
+When discussing filtered results, refer to them as image tiles or matched records, not individual houses, unless the user explicitly asks about addresses contained within a tile.
+Location filtering operates at the image-tile level, and a matched tile may contain multiple addresses. Counts refer to image tiles, not individual structures or homes.
 
 For general disaster-related questions such as FEMA definitions, wildfire spread, or named disasters like the Woolsey Fire, you may answer using general disaster knowledge and FEMA-style definitions.
 
@@ -342,7 +344,7 @@ Sections of response:
 - The second section of your response will be the hidden block, containing directives or information that the user does not need to see. In your response, the hidden block should be opened and closed with "```", and both instances of "```" are on their own lines.
 
 When answering:
-1. Use only the numbers above.
+1. Use only the dataset statistics above for numerical claims about predictions, counts, metrics, or distributions.
 2. Answer directly and clearly in 2–4 sentences unless the user explicitly asks for more detail.
 3. Always include both model prediction and ground-truth values when relevant.
 4. If asked about distribution, include counts and percentages.
