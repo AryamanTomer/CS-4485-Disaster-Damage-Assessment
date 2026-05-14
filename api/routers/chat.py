@@ -129,19 +129,94 @@ def format_per_class_metrics(metrics: dict[str, dict[str, float | int]]) -> str:
     return "\n".join(lines)
 
 
+@lru_cache(maxsize=1)
+def load_enriched_dataframe() -> pd.DataFrame:
+    metadata_path = _metadata_path()
+
+    with open(metadata_path, encoding="utf-8") as f:
+        metadata_doc = json.load(f)
+
+    tiles = metadata_doc.get("tiles", [])
+    df = pd.DataFrame(tiles)
+
+    addresses_path = ROOT / "evaluation" / "house_addresses.json"
+
+    with open(addresses_path, encoding="utf-8") as f:
+        address_data = json.load(f)
+
+    address_lookup = {}
+
+    for item in address_data:
+        image_id = item.get("image_id")
+        houses = item.get("houses", [])
+        addresses = []
+
+        for house in houses:
+            addr = house.get("address")
+
+            if addr:
+                addresses.append(addr)
+
+        address_lookup[image_id] = addresses
+
+    def normalize_image_id(image_name: str) -> str:
+        return (
+            image_name
+            .replace("_post_disaster.png", "")
+            .replace("_pre_disaster.png", "")
+        )
+    
+    df["image_id"] = df["image_name"].apply(normalize_image_id)
+
+    df["addresses"] = df["image_id"].map(
+        lambda x: address_lookup.get(x, [])
+    )
+
+    return df
+
+
 @router.post("/chat")
 def chat(body: ChatRequest):
+    df = load_enriched_dataframe()
+    
     message = body.message
-    path = _metadata_path()
-    tiles = list(_load_tiles(str(path.resolve())))
+    message_lower = message.lower()
+    matched_locations = set()
 
-    if not tiles:
+    for addresses in df["addresses"]:
+        for addr in addresses:
+            parts = [p.strip() for p in addr.split(",")]
+
+            for part in parts:
+                normalized_part = part.lower()
+
+                if len(normalized_part) > 3 and normalized_part in message_lower:
+                    matched_locations.add(normalized_part)
+
+    filtered_df = df
+    
+    for loc in matched_locations:
+        filtered_df = filtered_df[
+            filtered_df["addresses"].apply(
+                lambda addresses: any(
+                    loc in addr.lower()
+                    for addr in addresses
+                )
+            )
+        ]
+
+    if matched_locations and filtered_df.empty:
+        filtered_df = df
+
+    if matched_locations:
+        df = filtered_df
+
+    if df.empty:
         raise HTTPException(
             status_code=503,
             detail="predictions_with_metadata.json not found or empty. Run: python backend/export_predictions_metadata.py",
         )
 
-    df = pd.DataFrame(tiles)
     pred_col = "prediction"
     gt_col = "ground_truth"
 
@@ -155,6 +230,8 @@ def chat(body: ChatRequest):
     gt_values = df[gt_col].map(normalize_label)
 
     total = len(df)
+
+    location_context = "" if not matched_locations else ", ".join(sorted(matched_locations))
 
     # Prediction counts
     pred_no_damage = count_label(pred_values, "no-damage")
@@ -208,11 +285,15 @@ def chat(body: ChatRequest):
 You are an AI assistant for a wildfire damage assessment dashboard.
 
 Use the dataset facts below for prediction, metric, and damage-count questions.
+These statistics may represent either the full dataset or a location-filtered subset based on the user query.
 
 For general disaster-related questions such as FEMA definitions, wildfire spread, or named disasters like the Woolsey Fire, you may answer using general disaster knowledge and FEMA-style definitions.
 
 Dataset facts:
 - Total images in predictions metadata export: {total}
+
+Location context:
+- Matched locations (if empty, assume we are using whole dataset): {location_context}
 
 Model prediction distribution:
 - No damage: {pred_no_damage} ({pred_no_damage_pct}%)
