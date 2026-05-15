@@ -229,10 +229,13 @@ Open **`/api/docs`**; scroll to **`POST /chat`**.
 
 ---
 
-## 13. Limitations & future work (Person A) — ~45 seconds
+## 13. Limitations & future work (Person A) — ~60–75 seconds
 
-> “We’re explicit about **limitations**: possible **train/eval overlap** if not held out by disaster, **class imbalance**, and **API cost/latency** for **GPT-4o Vision** demos — while **graded-style metrics** come from **ResNet** on `results_resnet.csv`.  
-> **Future work:** stricter **geographic holdout**, deeper **map–chat linking** (highlight tiles from chat), richer **external context** with clear sourcing, and **stronger automated tests in CI**.”
+> “We’re explicit about **limitations**.  
+> **First, evaluation honesty:** possible **train/eval overlap** if not held out by disaster, and **class imbalance** — lots of **no-damage** — so headline accuracy must be read with **per-class** metrics. **Graded-style metrics** on our dashboard come from **ResNet** batch output in **`results_resnet.csv`**, not from calling GPT-4o on every tile in production — that avoids **API cost** and **latency** during grading.  
+> **Second, deployed imagery:** the full xView2 / SoCal archive is **not** in GitHub because of **size limits**. Our **deployed** EC2 instance only runs **on-demand VLM** when **paired pre/post PNGs** exist on the server under **`data/train/images/`**. The static manifest can list tile IDs that were **never copied** to the server; in that case the API correctly returns **‘Post image not found.’** For live demos we use **(1)** tiles actually mounted on the server, **(2)** **Upload VLM** for ad-hoc pairs, and **(3)** precomputed **batch** results for map tinting and chat statistics. We added **`GET /vlm/available-tiles`** so the dropdown only shows tiles **on disk**.  
+> **Third, GPT-4o Vision** demos still depend on **OpenAI quota** and network.  
+> **Future work:** sync a **SoCal subset** to cloud storage, stricter **geographic holdout**, deeper **map–chat linking**, and **stronger automated tests in CI**.”
 
 ---
 

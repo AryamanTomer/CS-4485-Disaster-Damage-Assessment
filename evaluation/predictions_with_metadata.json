@@ -36406,6 +36406,39 @@
       "pre_filename": "guatemala-volcano_00000000_pre_disaster.png",
       "post_filename": "guatemala-volcano_00000000_post_disaster.png",
       "created_at": "2026-05-15T08:57:31.868444"
+    },
+    {
+      "image_name": "socal-fire_00000001_post_disaster.png",
+      "img_name": "socal-fire_00000001_post_disaster.png",
+      "prediction": "unclear",
+      "ground_truth": null,
+      "latitude": null,
+      "longitude": null,
+      "geo_source": "vlm_upload",
+      "disaster": "user-upload",
+      "disaster_type": "wildfire",
+      "capture_date": "2026-05-15T08:59:41.153356",
+      "sensor": "uploaded",
+      "mode": "crops",
+      "resnet_label": "destroyed",
+      "created_at": "2026-05-15T08:59:41.169599"
+    },
+    {
+      "image_name": "guatemala-volcano_00000000_post_disaster.png",
+      "img_name": "guatemala-volcano_00000000_post_disaster.png",
+      "prediction": "no-damage",
+      "ground_truth": null,
+      "latitude": null,
+      "longitude": null,
+      "geo_source": "vlm_upload",
+      "disaster": "user-upload",
+      "disaster_type": "wildfire",
+      "capture_date": "2026-05-15T09:00:01.889586",
+      "sensor": "uploaded",
+      "mode": "full",
+      "pre_filename": "guatemala-volcano_00000000_pre_disaster.png",
+      "post_filename": "guatemala-volcano_00000000_post_disaster.png",
+      "created_at": "2026-05-15T09:00:01.911875"
     }
   ]
 }

@@ -1230,6 +1230,7 @@ function App() {
   const [isDamageChartOpen, setIsDamageChartOpen] = useState(false);
   const mapSearchAbortRef = useRef(null);
   const [vlmPostName, setVlmPostName] = useState('');
+  const [vlmAvailableTiles, setVlmAvailableTiles] = useState([]);
   const [vlmMode, setVlmMode] = useState('crops');
   const [vlmLoading, setVlmLoading] = useState(false);
   const [vlmError, setVlmError] = useState(null);
@@ -1284,7 +1285,29 @@ function App() {
     loadTilePredictions();
   }, []);
 
+  useEffect(() => {
+    const loadVlmTiles = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/vlm/available-tiles?prefix=socal-fire_`);
+        if (!response.ok) {
+          throw new Error(`VLM tile list failed: ${response.status}`);
+        }
+        const data = await response.json();
+        const tiles = Array.isArray(data.tiles) ? data.tiles : [];
+        setVlmAvailableTiles(tiles);
+      } catch (error) {
+        console.warn('Could not load VLM-available tiles from API.', error);
+        setVlmAvailableTiles([]);
+      }
+    };
+
+    loadVlmTiles();
+  }, []);
+
   const vlmPostOptions = useMemo(() => {
+    if (vlmAvailableTiles.length > 0) {
+      return [...vlmAvailableTiles].sort();
+    }
     if (!availableImageSet) {
       return [];
     }
@@ -1292,10 +1315,14 @@ function App() {
       .filter((f) => f.endsWith('_post_disaster.png'))
       .filter((f) => f.startsWith('socal-fire_'))
       .sort();
-  }, [availableImageSet]);
+  }, [vlmAvailableTiles, availableImageSet]);
 
   useEffect(() => {
-    if (vlmPostOptions.length > 0 && !vlmPostName) {
+    if (vlmPostOptions.length === 0) {
+      setVlmPostName('');
+      return;
+    }
+    if (!vlmPostName || !vlmPostOptions.includes(vlmPostName)) {
       setVlmPostName(vlmPostOptions[0]);
     }
   }, [vlmPostOptions, vlmPostName]);
@@ -1988,10 +2015,15 @@ function App() {
                       className="vlm-panel-select"
                       value={vlmPostName}
                       onChange={(e) => setVlmPostName(e.target.value)}
+                      disabled={vlmPostOptions.length === 0}
                     >
-                      {vlmPostOptions.map((f) => (
-                        <option key={f} value={f}>{f}</option>
-                      ))}
+                      {vlmPostOptions.length === 0 ? (
+                        <option value="">No tiles on server (add PNGs to data/train/images)</option>
+                      ) : (
+                        vlmPostOptions.map((f) => (
+                          <option key={f} value={f}>{f}</option>
+                        ))
+                      )}
                     </select>
                     <label className="vlm-panel-label vlm-panel-row" htmlFor="vlm-mode-select">
                       <span>Mode</span>

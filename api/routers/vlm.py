@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 from typing import Literal
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from openai import APIConnectionError, APIStatusError, APITimeoutError, AuthenticationError, RateLimitError
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
@@ -69,11 +69,40 @@ def _resolve_paths(post_name: str) -> tuple[Path, Path, Path]:
     label_path = LABELS_DIR / post_name.replace(".png", ".json")
 
     if not post_path.is_file():
-        raise HTTPException(status_code=404, detail=f"Post image not found: {post_name}")
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"Post image not found: {post_name}. "
+                f"Place paired PNGs in {IMAGES_DIR} (pre + post). "
+                "GET /vlm/available-tiles lists tiles present on this server."
+            ),
+        )
     if not pre_path.is_file():
-        raise HTTPException(status_code=404, detail=f"Pre image not found: {pre_name}")
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"Pre image not found: {pre_name}. "
+                f"Expected alongside post tile in {IMAGES_DIR}."
+            ),
+        )
 
     return pre_path, post_path, label_path
+
+
+def _list_available_post_tiles(prefix: str = "") -> list[str]:
+    """Post-disaster PNGs under data/train/images with a matching pre-disaster pair."""
+    if not IMAGES_DIR.is_dir():
+        return []
+
+    names: list[str] = []
+    for post_path in sorted(IMAGES_DIR.glob("*_post_disaster.png")):
+        name = post_path.name
+        if prefix and not name.startswith(prefix):
+            continue
+        pre_name = name.replace("_post_disaster.png", "_pre_disaster.png")
+        if (IMAGES_DIR / pre_name).is_file():
+            names.append(name)
+    return names
 
 
 def _validate_upload_image(file: UploadFile, field_name: str) -> None:
@@ -105,6 +134,20 @@ async def _read_validated_image_bytes(file: UploadFile, field_name: str) -> byte
         raise HTTPException(status_code=400, detail=f"{field_name} is not a valid image.") from exc
 
     return data
+
+
+@router.get("/vlm/available-tiles")
+def vlm_available_tiles(
+    prefix: str = Query(default="socal-fire_", description="Filename prefix filter."),
+) -> dict[str, object]:
+    """Post-disaster PNGs on disk with a matching pre-disaster pair (for the VLM dropdown)."""
+    tiles = _list_available_post_tiles(prefix)
+    return {
+        "prefix": prefix,
+        "images_dir": str(IMAGES_DIR),
+        "count": len(tiles),
+        "tiles": tiles,
+    }
 
 
 @router.get("/vlm/predict")
