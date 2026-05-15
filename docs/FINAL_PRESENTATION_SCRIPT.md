@@ -246,40 +246,285 @@ Open **`/api/docs`**; scroll to **`POST /chat`**.
 
 ---
 
-## 15. Q&A bank — rapid-fire answers (2–3 min; expand if pressed)
+## 15. Q&A bank — expanded (pick answers as needed; do not read the whole section aloud)
 
-**Q: Why GPT-4o Vision if ResNet drives the report card?**  
-> “ResNet is our **primary batch model** for reproducible metrics and cost; GPT-4o Vision is for **interactive** assessment, upload demos, and comparing reasoning-style outputs to the CNN.”
+*Use **STAR** for behavioral questions (Situation → Task → Action → Result). Keep technical answers to **2–4 sentences** unless the instructor asks for depth.*
 
-**Q: How do you prevent hallucinated numbers in chat?**  
-> “Server computes stats into a context block; instructions forbid inventing counts.”
+---
 
-**Q: What if OpenAI is down?**  
-> “Users see an error; ResNet offline path still works for batch; we document dependency.”
+### A. Models & machine learning
 
-**Q: Is ~95.5% accuracy on new fires?**  
-> “No — that number is **ResNet** on **this corpus** with stated exclusions; it is not a guarantee on a new disaster until we run geographic holdout.”
+**Q: Why two models (ResNet and GPT-4o Vision)?**  
+> “**ResNet-18** gives a **fast, local, repeatable** baseline we can batch over thousands of tiles without API cost. **GPT-4o Vision** gives **language-guided** reasoning for **live** demos and **upload** workflows. For the **final product** we standardized on **ResNet** for **reported metrics** and map/chat statistics because it **performed better on our batch evaluation** and is cheaper at scale.”
 
-**Q: Why exclude un-classified?**  
-> “No reliable label to score against; including them would distort metrics.”
+**Q: Why ResNet-18 specifically?**  
+> “It’s a **proven** CNN backbone, easy to train with **six-channel** input—pre and post stacked—and strong enough for a course-scale baseline without a huge training budget.”
 
-**Q: Security of API keys?**  
-> “Stored as server env / secrets, never in Git; `.env` gitignored.”
+**Q: How is ResNet trained?**  
+> “`backend/train_classifier.py`: **80/20** train/val split, ImageNet-style normalization, optional augmentation, **four-class** output aligned to FEMA-style labels. We export weights to `backend/weights/resnet18_damage.pth` for inference.”
 
-**Q: Scalability?**  
-> “VLM is bounded by OpenAI rate limits; batch ResNet scales locally; horizontal scaling would add queue + workers.”
+**Q: What is the ResNet input?**  
+> “We **concatenate** pre- and post-disaster imagery into **six channels** so the network sees **both** time steps in one forward pass.”
 
-**Q: Ethics / misuse?**  
-> “Aid prioritization support only; not a legal survey; human verification for consequential decisions.”
+**Q: How does the VLM work?**  
+> “`backend/vlm_pipeline.py` sends **pre + post** images to **GPT-4o Vision** with a **strict FEMA-aligned prompt**, then **parses** the reply to a single label (`no-damage`, `minor-damage`, `major-damage`, `destroyed`, or `unclear` when visibility is bad). Documented in `evaluation/VLM_OPTIMIZATION.md`.”
 
-**Q: Team conflicts?**  
-> “We split interfaces, short standups, merge windows before demo.” *(STAR your real story.)*
+**Q: Did GPT-4o Vision beat ResNet?**  
+> “On our **batch runs**, **ResNet was stronger** on this dataset—that’s why the **evaluation dashboard** prefers **`results_resnet.csv`**. We still keep VLM for **interactive** comparison and rubric alignment.”
 
-**Q: Biggest technical challenge?**  
-> “ResNet training and batch alignment; **GPT-4o** prompt and parsing for live VLM; keeping **CSV, JSON, and UI** contracts consistent.”
+**Q: What damage classes do you use?**  
+> “**No damage, minor, major, destroyed**—aligned with **FEMA-style** disaster assessment language. Labels may also be **`un-classified`** in the source data.”
 
-**Q: What would you redo?**  
-> “Earlier integration tests; earlier frozen evaluation split.”
+**Q: Image-level vs building-level labels?**  
+> “xView2-style data has **building polygons** in JSON; we derive **tile-level** ground truth for batch CSV rows and can use **building crops** in VLM **crops** mode when label JSON exists.”
+
+**Q: Could you use a bigger model (ViT, SAM, etc.)?**  
+> “Yes—that’s **future work**. We prioritized an **end-to-end demo**: map, API, evaluation page, and deployment within the semester.”
+
+**Q: How do you handle class imbalance?**  
+> “**`no-damage`** dominates. We report **per-class precision, recall, and F1** and a **confusion matrix**, not only headline accuracy.”
+
+---
+
+### B. Evaluation & metrics
+
+**Q: Where does ~95.5% accuracy come from?**  
+> “**ResNet** batch predictions in **`evaluation/results_resnet.csv`**, scored by **`GET /evaluation/metrics`** (or `evaluation/metrics.py` offline). **Not** from GPT-4o on every tile in production.”
+
+**Q: How many samples were evaluated?**  
+> “In our committed snapshot: **2,799** CSV rows, **558** excluded (`un-classified` ground truth), **2,241** scored rows, **~95.54%** accuracy. **Re-check live** on deploy after any new batch run.”
+
+**Q: Why exclude `un-classified`?**  
+> “There is **no reliable ground-truth class** to score against. Including those rows would **inflate or distort** accuracy.”
+
+**Q: What about `unclear` VLM outputs?**  
+> “In the **evaluation API**, `unclear` predictions are **normalized** for scoring rules in `evaluation.py`—our **ResNet CSV** typically has valid four-class labels. VLM batch runs may exclude or map unclear separately; see `VLM_OPTIMIZATION.md`.”
+
+**Q: Is 95% accuracy on a new fire or new region?**  
+> “**No.** That is **in-distribution** performance on **this project corpus**. **Generalization** requires **held-out-by-disaster or by-region** evaluation—we list that as **future work**.”
+
+**Q: Train/test leakage?**  
+> “Batch evaluation can **overlap** training tiles unless we enforce a **geographic or disaster-level holdout**. We **disclose** that in the report and presentation.”
+
+**Q: Which class is hardest?**  
+> “**Minor damage** typically has the **lowest F1**—subtle roof/wall damage is easy to confuse with **no damage** or **major**.”
+
+**Q: How is ground truth defined?**  
+> “From **dataset label JSON**—aggregated to a **tile-level** label consistent with our batch scripts and xView2-style conventions.”
+
+**Q: Can we see a confusion matrix?**  
+> “Yes—**evaluation view** in the UI or **`GET /evaluation/metrics`**; offline we also save **`evaluation/confusion_matrix.png`** via `metrics.py`.”
+
+---
+
+### C. Deployed app, dataset & VLM limitations
+
+**Q: Why does VLM say “Post image not found”?**  
+> “**On-demand VLM** reads **`data/train/images/{basename}.png`** on the **server**. The UI manifest can list tiles that were **never copied** to EC2. The API is correct—it’s a **data availability** limitation, not a bad filename.”
+
+**Q: Why isn’t the full dataset in GitHub?**  
+> “**Size and licensing**—xView2-scale imagery is **too large** for the course repo. We document layout in **`data/README.md`** and mount data on the server via **Docker volumes**.”
+
+**Q: What works on the deployed app without the full dataset?**  
+> “**Map** (for tiles you mounted), **evaluation metrics** from **CSV**, **chat** from **`predictions_with_metadata.json`**, **Upload VLM**, and **ResNet-tinted** overlays from batch exports.”
+
+**Q: What is `GET /vlm/available-tiles`?**  
+> “Lists only tiles with **both** pre and post PNGs **on disk**—so the dropdown matches what VLM can actually run.”
+
+**Q: What is Upload VLM for?**  
+> “**`POST /vlm/upload-predict`**—users supply **local** pre/post images when server tiles aren’t present. Good for **ad-hoc** demos and grading without syncing the whole corpus.”
+
+**Q: We got HTTP 413 on upload—why?**  
+> “**nginx** default body limit was **1MB**. We raised **`client_max_body_size`** to **50M** in `nginx.conf`; the API allows up to **20MB per image**. **Rebuild/restart** the web container after deploy.”
+
+**Q: Why did the app call `127.0.0.1:8000` and fail?**  
+> “That’s **local dev** when **uvicorn isn’t running**, or an old frontend build. **Production** should use **`/api`** through nginx. Run **two terminals**: API on **8000**, Vite on **5173**.”
+
+---
+
+### D. Architecture, API & deployment
+
+**Q: Walk us through the architecture.**  
+> “**Browser → nginx** (React SPA + static `/data` + **`/api` proxy**) **→ FastAPI** → **JSON/CSV on disk** + **OpenAI** for chat/VLM. **Docker Compose** on **EC2**; **GitHub Actions** SSH deploy on push to **`main`**.”
+
+**Q: Main API endpoints?**  
+> “**`GET /health`**, **`GET /predictions/tiles`**, **`GET /predictions/metadata`**, **`POST /vlm/predict`**, **`POST /vlm/upload-predict`**, **`GET /vlm/available-tiles`**, **`POST /chat`**, **`GET /evaluation/metrics`**. Docs at **`/docs`**.”
+
+**Q: Why nginx in front of FastAPI?**  
+> “**Single origin** for the SPA, **proxy `/api`**, serve **large imagery** from volume mounts, and set **upload size limits**.”
+
+**Q: How do you deploy?**  
+> “**`docker-compose.yml`**: `api` + `web` images. **`.github/workflows/deploy-ec2.yml`**: SSH to EC2, `git pull`, `docker compose restart`. Instructor tests **`[DEPLOYED_URL]`** May 16–17.”
+
+**Q: Python version?**  
+> “**3.12** in `Dockerfile.api` and README; course venv matches.”
+
+**Q: What’s in the GitHub repo vs AWS?**  
+> “**Repo:** file-backed pipeline, Docker, FastAPI, React—reproducible for graders. **Team AWS narrative** (RDS, S3, Beanstalk, etc.) may describe **extended production**; we document both in the **final report** so claims stay honest.”
+
+**Q: Do you use PostgreSQL in the open-source app?**  
+> “The **graded FastAPI routers** use **JSON/CSV** (`predictions_with_metadata.json`, `results_resnet.csv`). **`database_url`** in settings is a **placeholder** for future/cloud work.”
+
+**Q: CI/CD—do tests run automatically?**  
+> “Current **`ci.yml`** is a **starter** (`echo` only). **Deploy workflow** runs on **`main`**. **Future work:** pytest in CI before deploy.”
+
+---
+
+### E. Frontend & map
+
+**Q: What map library?**  
+> “**React-Leaflet** on **OpenStreetMap**—pan, zoom, **GeoJSON** polygons, **before/after** imagery layers.”
+
+**Q: How are buildings colored?**  
+> “By **damage class** from predictions or house-condition JSON—greens/yellows/oranges/reds per legend.”
+
+**Q: How does address search work?**  
+> “**Nominatim** (OpenStreetMap geocoding) where enabled in the UI.”
+
+**Q: Chat commands like `/go` or `/filter`?**  
+> “If implemented in your build, they **pan the map** or **filter** chat context—demo only what your deployed branch actually supports.”
+
+**Q: Insight / pie chart panel?**  
+> “**Client-side** counts of visible records in the **current map viewport**—helps analysts see **distribution at a glance**.”
+
+---
+
+### F. Chatbot
+
+**Q: Is the chatbot RAG?**  
+> “We use **grounded prompting**: the server **loads metadata JSON**, **computes statistics with pandas**, injects them into the prompt, then **GPT-4o** answers. That’s **retrieval + generation** without a separate vector DB in the **open repo**.”
+
+**Q: How do you stop the chatbot from inventing numbers?**  
+> “Instructions: use **only** the injected **dataset facts** block for counts, accuracy, and confusion-matrix claims.”
+
+**Q: Can it answer general questions about the Woolsey Fire?**  
+> “Yes—the system prompt allows **concise factual** disaster context; **numerical** answers still must come from **computed stats**.”
+
+**Q: What data does chat use?**  
+> “**`evaluation/predictions_with_metadata.json`** (path overridable via **`PREDICTIONS_METADATA_PATH`**), usually exported after **ResNet** batch + `export_predictions_metadata.py`.”
+
+**Q: Does chat query PostgreSQL / live web?**  
+> “**In the GitHub app:** **no**—JSON + optional **curated article snippets** in code. If we extend to **AWS RDS** or live crawl, that’s documented separately in the report’s **AWS section**.”
+
+**Q: Example prompts for the instructor?**  
+> “‘How many tiles are predicted **destroyed** vs ground truth?’ ‘What is **overall accuracy** and lowest **F1** class?’ ‘Compare **major damage** prediction vs ground truth.’ ‘What rows are **excluded** from accuracy?’”
+
+---
+
+### G. Cost, performance & reliability
+
+**Q: Cost of running VLM at scale?**  
+> “**OpenAI charges per call**—prohibitive for **thousands** of tiles. That’s why **batch scoring** uses **ResNet** locally.”
+
+**Q: How fast is ResNet vs VLM?**  
+> “ResNet batch is **GPU/CPU local**; VLM is **network + API latency**, often **seconds per tile**.”
+
+**Q: What if OpenAI is down or rate-limited?**  
+> “VLM/upload returns **502/429/503** with a clear message. **Map, evaluation CSV, and chat** (if already exported) still work; **chat** needs OpenAI for **language** generation.”
+
+**Q: Rate limits during demo?**  
+> “Run **one** live VLM call; rely on **evaluation page** and **chat** for the rest. Have **screenshots** as backup.”
+
+---
+
+### H. Security, privacy & ethics
+
+**Q: Where is the OpenAI API key?**  
+> “**`.env`** on the server / compose environment—**never** committed; **`.gitignore`** blocks secrets.”
+
+**Q: Is aerial imagery sensitive?**  
+> “Yes—disaster imagery can reveal **home locations and damage**. We treat outputs as **decision support**, not legal or insurance findings.”
+
+**Q: Could this automate FEMA payouts?**  
+> “**No**—we position it as **prioritization and exploration** for analysts; **humans** must verify.”
+
+**Q: Bias concerns?**  
+> “Models trained on **past disasters** may **underperform** on new geography, building types, or sensors—another reason we stress **holdout evaluation**.”
+
+---
+
+### I. Dataset & domain
+
+**Q: Which disaster / dataset?**  
+> “**Southern California wildfire** demo tiles (**`socal-fire_*`**) in the **xView2 / xBD-style** challenge format—confirm exact citation with your instructor (xView2 vs xBD Woolsey).”
+
+**Q: Pre vs post imagery?**  
+> “**Paired tiles**—same footprint **before** and **after** the event—for change-based damage assessment.”
+
+**Q: Why FEMA-aligned classes?**  
+> “Matches **standardized** emergency-management language so outputs are **interpretable** to stakeholders.”
+
+---
+
+### J. Comparison & alternatives
+
+**Q: Why not label everything by hand?**  
+> “Scale—**thousands** of tiles. ML **prioritizes** where humans should look.”
+
+**Q: Why not only use a VLM?**  
+> “**Cost, latency, consistency**, and **we needed reproducible batch metrics** for the course evaluation.”
+
+**Q: How does this compare to commercial damage APIs?**  
+> “We’re a **research/course prototype**—focused on **transparency** (confusion matrix, open pipeline) rather than production SLAs.”
+
+---
+
+### K. Team, process & course logistics
+
+**Q: How did you divide work?**  
+> “**ML** (ResNet, batch, metrics), **backend** (FastAPI, VLM, chat), **frontend** (map, UI), **deployment** (Docker, EC2, nginx). **Trello** for tasks and weekly syncs.” *(Customize names/roles.)*
+
+**Q: Biggest challenge?**  
+> “**Integration**—one contract from **CSV → JSON → API → UI**; plus **honest evaluation** messaging; plus **deployed data** not matching the **manifest** for live VLM.”
+
+**Q: What would you do differently?**  
+> “**Earlier** frozen holdout split, **sync SoCal subset** to the server before demo week, **stronger CI tests**, and **filter VLM dropdown** from day one (`available-tiles`).”
+
+**Q: What are you most proud of?**  
+> “A **live, deployed** system—not just a notebook— with **map + metrics + chat** that an instructor can click through.”
+
+**Q: Did you use GitHub Projects / agile?**  
+> “**Trello** board with assignments and milestones; integration pushes before presentation.”
+
+---
+
+### L. Failure modes & debugging (if something breaks live)
+
+**Q: Map loads but no polygons?**  
+> “Check **`socal-fire-house-conditions.json`**, label paths, and browser console; confirm **static `/data`** is served by nginx.”
+
+**Q: Evaluation page empty?**  
+> “Ensure **`results_resnet.csv`** exists on server; hit **`/api/evaluation/metrics`** directly.”
+
+**Q: Chat says it can’t answer?**  
+> “Run **`export_predictions_metadata.py`**; set **`PREDICTIONS_METADATA_PATH`**; confirm file on EC2 volume.”
+
+**Q: CORS errors?**  
+> “Use **`/api`** through nginx in production, not mixed origins; FastAPI has CORS middleware for dev.”
+
+---
+
+### M. Future work (short closers)
+
+**Q: What’s next if you had another month?**  
+> “**Mount full SoCal subset** on EC2, **held-out evaluation**, **chat highlights map tiles**, **pytest in CI**, optional **S3** for imagery, and **confidence scores** on VLM if we extend the schema.”
+
+---
+
+### N. “Trap” questions — answer carefully
+
+**Q: So your app is 95% accurate at predicting wildfire damage anywhere?**  
+> “**No.** **~95.5%** is **ResNet** on **our labeled corpus** with **documented exclusions**—a **strong in-distribution** result, not a guarantee on **new** fires.”
+
+**Q: The chatbot searches FEMA.gov in real time?**  
+> “**In the open repo**, chat uses **precomputed stats** and **curated snippets**—not a live federal API crawl. Our **AWS report section** may describe richer production behavior if we built that separately.”
+
+**Q: Every building on the map was scored live by GPT-4o?**  
+> “**No**—overlays and chat counts typically come from **batch ResNet** (or exported metadata). **GPT-4o Vision** is for **explicit** VLM runs and **upload**.”
+
+---
+
+*If a question isn’t listed, answer with: **what we built**, **what we measured**, **what the deploy actually has on disk**, and **what we’d do next**—then offer to show it on `[DEPLOYED_URL]`.*
 
 ---
 
