@@ -1980,7 +1980,7 @@ function App() {
                     </svg>
                   </button>
 
-                  <div className="vlm-panel" role="region" aria-label="GPT-4o Vision VLM">
+                  <div className="vlm-panel" role="region" aria-label="ResNet-18 (VLM)">
                     <div className="vlm-panel-title">ResNet-18 (VLM)</div>
                     <label className="vlm-panel-label" htmlFor="vlm-tile-select">Post tile</label>
                     <select
